@@ -269,6 +269,8 @@ tbody td{padding:13px 16px;vertical-align:middle}
 @media(max-width:900px){
   .sidebar{display:none!important}
   .mob-nav.show{display:block}
+@media(min-width:901px){.mob-nav{display:none!important}}
+  .desktop-only{display:none}
   .main{padding:14px 12px 80px}
   .topbar{padding:0 14px;height:54px;min-height:54px}
   .tb-live{display:none}
@@ -652,7 +654,7 @@ tbody td{padding:13px 16px;vertical-align:middle}
 </div>
 
 <!-- MOBILE NAV -->
-<nav class="mob-nav">
+<nav class="mob-nav" id="mobNav">
   <div class="mob-nav-items">
     <button class="mob-item active" data-page="dashboard" onclick="go('dashboard')"><span class="mob-item-icon">📊</span>Dashboard</button>
     <button class="mob-item" data-page="inventory" onclick="go('inventory')"><span class="mob-item-icon">📦</span>Products</button>
