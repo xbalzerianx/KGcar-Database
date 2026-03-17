@@ -201,7 +201,7 @@ tbody td{padding:13px 16px;vertical-align:middle}
 .inp-hint{font-size:11px;color:var(--gray);margin-top:-3px}
 
 /* SALE SEARCH */
-.prod-results{background:var(--navy3);border:1px solid var(--navy4);border-radius:var(--r2);max-height:240px;overflow-y:auto;margin-top:6px}
+.prod-results{background:var(--navy3);border:1px solid var(--navy4);border-radius:var(--r2);max-height:240px;overflow-y:auto;margin-top:6px;z-index:100}
 .prod-item{padding:11px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--navy4);transition:background .1s}
 .prod-item:last-child{border-bottom:none}.prod-item:hover{background:var(--gold3)}
 .prod-item-name{font-size:13px;font-weight:600}
@@ -498,14 +498,14 @@ tbody td{padding:13px 16px;vertical-align:middle}
           <div class="page-title">Record a Sale</div>
           <div class="page-sub">Stock deducts automatically when you save</div>
         </div>
-        <div style="max-width:580px">
+        <div style="max-width:580px;width:100%">
           <div class="card">
             <div class="card-hdr"><div><div class="card-title">📦 Select Product</div><div class="card-sub">Search by name, brand or product ID</div></div></div>
-            <div class="fg">
+            <div class="fg" style="position:relative">
               <label class="label">Search Product</label>
               <input class="inp" type="text" id="saleQ" placeholder="e.g. Castrol, Brake Pad, PRD-007…" oninput="saleSearch()" autocomplete="off"/>
-              <div class="prod-results" id="saleResults" style="display:none"></div>
-              <div class="sel-prod-box" id="selProdBox" style="display:none">
+              <div class="prod-results" id="saleResults" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:200;max-height:200px;overflow-y:auto"></div>
+              <div class="sel-prod-box" id="selProdBox" style="display:none;margin-top:8px">
                 <div class="fs11 text-gray" style="margin-bottom:6px">Selected Product</div>
                 <div class="sel-prod-name" id="selName"></div>
                 <div class="sel-prod-meta" id="selMeta"></div>
@@ -585,7 +585,7 @@ tbody td{padding:13px 16px;vertical-align:middle}
         </div>
         <div class="tbl-wrap">
           <table>
-            <thead><tr><th>Sale ID</th><th>Date & Time</th><th>Product</th><th>Category</th><th>Qty</th><th>Unit Price</th><th>Total</th><th>Recorded By</th></tr></thead>
+            <thead><tr><th>Sale ID</th><th>Date & Time</th><th>Product</th><th class="tbl-col-hide">Category</th><th>Qty</th><th class="tbl-col-hide">Unit Price</th><th>Total</th><th class="tbl-col-hide">Recorded By</th></tr></thead>
             <tbody id="slBody"></tbody>
           </table>
         </div>
@@ -636,7 +636,7 @@ tbody td{padding:13px 16px;vertical-align:middle}
         </div>
         <div class="tbl-wrap">
           <table>
-            <thead><tr><th>Description</th><th>Category</th><th>Amount</th><th>Date</th><th>Recorded By</th><th>Notes</th><th>Actions</th></tr></thead>
+            <thead><tr><th>Description</th><th>Category</th><th>Amount</th><th>Date</th><th class="tbl-col-hide">Recorded By</th><th class="tbl-col-hide">Notes</th><th>Actions</th></tr></thead>
             <tbody id="expBody"></tbody>
           </table>
         </div>
@@ -906,7 +906,10 @@ async function loadAll(){
     [products, sales, expenses] = await Promise.all([apiGet('KGProduct'), apiGet('KGSale'), apiGet('KGExpense').catch(()=>[])]);
     sales.sort((a,b)=>new Date(b.created_date||0)-new Date(a.created_date||0));
     expenses.sort((a,b)=>new Date(b.created_date||0)-new Date(a.created_date||0));
-    alertBadge(); render();
+    alertBadge();
+    renderDash();
+    renderExpenses();
+    render();
   } catch(e){toast('Failed to load: '+e.message,'err');}
 }
 
@@ -925,6 +928,7 @@ function render(){
   if(curPage==='dashboard')renderDash();
   if(curPage==='inventory')renderInv();
   if(curPage==='saleslog')renderSL();
+  if(curPage==='expenses')renderExpenses();
   if(curPage==='actlog')renderActLog();
   if(curPage==='alerts')renderAlerts();
 }
@@ -1210,12 +1214,15 @@ async function logActivity(type, productName, detail){
     if(stored.length>500) stored.length=500;
     localStorage.setItem('kgcar_logs',JSON.stringify(stored));
   } catch(e){}
+  // re-render actlog immediately if currently visible
+  if(curPage==='actlog') renderActLog();
 }
 function loadActLogs(){
   try { actLogs=JSON.parse(localStorage.getItem('kgcar_logs')||'[]'); } catch(e){ actLogs=[]; }
 }
 function renderActLog(){
-  loadActLogs();
+  // use in-memory actLogs (already has latest entries)
+  if(!actLogs.length) loadActLogs();
   const who=document.getElementById('actWho').value;
   const list=actLogs.filter(l=>!who||l.performed_by===who);
   const icons={sale:'💰',add:'➕',edit:'✏️',delete:'🗑️',expense:'💸'};
@@ -1393,11 +1400,11 @@ function renderSL(){
     <tr><td class="fs11 text-gray fw7">${s.sale_id||'—'}</td>
     <td><div class="fw7 fs12">${s.sale_date||''}</div><div class="fs11 text-gray">${s.created_date?phTime(s.created_date):''}</div></td>
     <td><div class="fw7">${s.product_name||'—'}</div><div class="fs11 text-gray">${s.product_id||''}</div></td>
-    <td><span class="badge b-cat">${s.category||'—'}</span></td>
+    <td class="tbl-col-hide"><span class="badge b-cat">${s.category||'—'}</span></td>
     <td class="fw7">${num(s.qty_sold)}</td>
-    <td class="num">${peso(s.unit_price)}</td>
+    <td class="num tbl-col-hide">${peso(s.unit_price)}</td>
     <td class="num text-gold fw7">${peso(s.sale_total)}</td>
-    <td><span class="badge ${s.recorded_by==='Admin'?'b-admin':'b-asst'}">${s.recorded_by||'Admin'}</span></td></tr>`).join('')
+    <td class="tbl-col-hide"><span class="badge ${s.recorded_by==='Admin'?'b-admin':'b-asst'}">${s.recorded_by||'Admin'}</span></td></tr>`).join('')
     ||`<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--gray)">No sales recorded yet</td></tr>`;
   document.getElementById('slFooter').innerHTML=list.length?`${list.length} transactions · Total: <span class="num text-gold fw7" style="font-size:15px">${peso(tot)}</span>`:'';
 }
@@ -1417,8 +1424,8 @@ function renderExpenses(){
       <td><span class="badge b-cat">${e.category||'—'}</span></td>
       <td class="num text-red fw7">${peso(e.amount)}</td>
       <td><div class="fw7 fs12">${e.expense_date||''}</div><div class="fs11 text-gray">${e.created_date?phTime(e.created_date):''}</div></td>
-      <td><span class="badge ${e.recorded_by==='Admin'?'b-admin':'b-asst'}">${e.recorded_by||'Admin'}</span></td>
-      <td class="fs11 text-gray">${e.notes||'—'}</td>
+      <td class="tbl-col-hide"><span class="badge ${e.recorded_by==='Admin'?'b-admin':'b-asst'}">${e.recorded_by||'Admin'}</span></td>
+      <td class="tbl-col-hide fs11 text-gray">${e.notes||'—'}</td>
       <td><button class="btn btn-xs" style="background:var(--red2);color:var(--red);border:1px solid rgba(239,68,68,.3)" onclick="deleteExpense('${e.id}','${(e.description||'').replace(/'/g,"\'")}')">🗑️</button></td>
     </tr>`).join('')||`<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--gray)">No expenses in this period</td></tr>`;
   document.getElementById('expFooter').innerHTML=list.length?`${list.length} expenses · Total: <span class="num text-red fw7" style="font-size:15px">${peso(tot)}</span>`:'';
