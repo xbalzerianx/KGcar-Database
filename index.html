@@ -884,8 +884,39 @@ window.addEventListener('DOMContentLoaded', () => {
 // ═══════════════════ UTILS ═══════════════════
 function peso(n){return '₱'+Number(n||0).toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function num(n){return Number(n||0).toLocaleString('en-PH');}
-function today(){return new Date().toISOString().split('T')[0];}
-function phTime(d){return new Date(d).toLocaleString('en-PH',{timeZone:'Asia/Manila',month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'});}
+function today(){
+  // Always return today's date in Philippine Time (UTC+8)
+  const now = new Date();
+  const ph = new Date(now.toLocaleString('en-US', {timeZone:'Asia/Manila'}));
+  const y = ph.getFullYear();
+  const m = String(ph.getMonth()+1).padStart(2,'0');
+  const d = String(ph.getDate()).padStart(2,'0');
+  return `${y}-${m}-${d}`;
+}
+function phTime(d){
+  if(!d) return '—';
+  return new Date(d).toLocaleString('en-PH',{
+    timeZone:'Asia/Manila',
+    month:'short',day:'numeric',year:'numeric',
+    hour:'2-digit',minute:'2-digit',hour12:true
+  });
+}
+function phDate(d){
+  // Format a YYYY-MM-DD string nicely
+  if(!d) return '—';
+  if(d.includes('T')){
+    return new Date(d).toLocaleDateString('en-PH',{timeZone:'Asia/Manila',month:'short',day:'numeric',year:'numeric'});
+  }
+  const [y,mo,da] = d.split('-');
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${months[parseInt(mo)-1]} ${parseInt(da)}, ${y}`;
+}
+function nowPH(){
+  // Return current PH datetime as ISO string
+  const now = new Date();
+  const ph = new Date(now.toLocaleString('en-US',{timeZone:'Asia/Manila'}));
+  return ph.toISOString().replace('Z','') + '+08:00';
+}
 function st(p){if(!p.stock_qty||p.stock_qty<=0)return 'out';if(p.stock_qty<=(p.min_stock||0))return 'low';return 'ok';}
 function badgeEl(p){const s=st(p);return s==='out'?`<span class="badge b-out">⛔ Out of Stock</span>`:s==='low'?`<span class="badge b-low">⚠️ Low Stock</span>`:`<span class="badge b-ok">✅ OK</span>`;}
 function qtyColor(p){return st(p)==='out'?'text-red':st(p)==='low'?'text-yellow':'';}
@@ -903,9 +934,17 @@ function genSaleId(){
 // ═══════════════════ LOAD ═══════════════════
 async function loadAll(){
   try {
-    [products, sales, expenses] = await Promise.all([apiGet('KGProduct'), apiGet('KGSale'), apiGet('KGExpense').catch(()=>[])]);
+    [products, sales, expenses, actLogs] = await Promise.all([
+      apiGet('KGProduct'),
+      apiGet('KGSale'),
+      apiGet('KGExpense').catch(()=>[]),
+      apiGet('KGActivity').catch(()=>[]),
+    ]);
     sales.sort((a,b)=>new Date(b.created_date||0)-new Date(a.created_date||0));
     expenses.sort((a,b)=>new Date(b.created_date||0)-new Date(a.created_date||0));
+    // normalize KGActivity: add .timestamp key for renderActLog
+    actLogs.forEach(l=>{ if(!l.timestamp) l.timestamp = l.timestamp_ph||l.created_date; });
+    actLogs.sort((a,b)=>new Date(b.created_date||0)-new Date(a.created_date||0));
     alertBadge();
     renderDash();
     renderExpenses();
@@ -1047,7 +1086,7 @@ function renderDash(){
   // top sales in period
   const topRows=fs.slice(0,6).map(s=>`
     <tr><td class="fs11 text-gray fw7 tbl-col-hide">${s.sale_id||'—'}</td>
-    <td><div class="fw7">${s.product_name||'—'}</div><div class="fs11 text-gray">${s.sale_date||''}</div></td>
+    <td><div class="fw7">${s.product_name||'—'}</div><div class="fs11 text-gray">${phDate(s.sale_date||s.created_date)}</div></td>
     <td class="tbl-col-hide"><span class="badge b-cat">${s.category||'—'}</span></td>
     <td class="num text-gold fw7">${peso(s.sale_total)}</td>
     <td class="tbl-col-hide"><span class="badge ${s.recorded_by==='Admin'?'b-admin':'b-asst'}">${s.recorded_by||'—'}</span></td></tr>`).join('')
@@ -1058,7 +1097,7 @@ function renderDash(){
     <tr><td><div class="fw7">${e.description||'—'}</div></td>
     <td class="tbl-col-hide"><span class="badge b-cat">${e.category||'—'}</span></td>
     <td class="num text-red fw7">${peso(e.amount)}</td>
-    <td class="fs11 text-gray tbl-col-hide">${e.expense_date||''}</td>
+    <td class="fs11 text-gray tbl-col-hide">${phDate(e.expense_date||e.created_date)}</td>
     <td class="tbl-col-hide"><span class="badge ${e.recorded_by==='Admin'?'b-admin':'b-asst'}">${e.recorded_by||'—'}</span></td></tr>`).join('')
     ||`<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--gray)">No expenses in this period</td></tr>`;
 
@@ -1198,27 +1237,48 @@ function buildChanges(old,nw){
 
 // ═══════════════════ ACTIVITY LOG ═══════════════════
 async function logActivity(type, productName, detail){
+  const ts = nowPH();
   const entry={
     action_type: type,
     product_name: productName,
     detail: detail,
     performed_by: curUser?.name||'Unknown',
-    user_role: curUser?.role||'',
-    timestamp: new Date().toISOString(),
+    user_role: curUser?.role||'admin',
+    timestamp_ph: ts,
+    timestamp: ts, // local key for rendering
+    created_date: ts,
   };
   actLogs.unshift(entry);
-  // persist to localStorage
+  // Save to database (persistent, cross-device)
+  try {
+    const saved = await apiPost('KGActivity',{
+      action_type: type,
+      product_name: productName,
+      detail: detail,
+      performed_by: curUser?.name||'Unknown',
+      user_role: curUser?.role||'admin',
+      timestamp_ph: ts,
+    });
+    // Update in-memory entry with the saved id
+    entry.id = saved.id;
+  } catch(e){ console.warn('Activity log DB save failed:', e); }
+  // Also persist to localStorage as backup
   try {
     const stored=JSON.parse(localStorage.getItem('kgcar_logs')||'[]');
     stored.unshift(entry);
-    if(stored.length>500) stored.length=500;
+    if(stored.length>200) stored.length=200;
     localStorage.setItem('kgcar_logs',JSON.stringify(stored));
   } catch(e){}
   // re-render actlog immediately if currently visible
   if(curPage==='actlog') renderActLog();
 }
 function loadActLogs(){
-  try { actLogs=JSON.parse(localStorage.getItem('kgcar_logs')||'[]'); } catch(e){ actLogs=[]; }
+  // DB is primary source (loaded in loadAll). localStorage is fallback only.
+  if(actLogs.length) return;
+  try { 
+    const stored = JSON.parse(localStorage.getItem('kgcar_logs')||'[]');
+    if(stored.length) actLogs = stored;
+  } catch(e){ actLogs=[]; }
 }
 function renderActLog(){
   // use in-memory actLogs (already has latest entries)
@@ -1238,7 +1298,7 @@ function renderActLog(){
       <div class="activity-body">
         <div class="activity-txt">${icons[l.action_type]||'•'} ${l.product_name}</div>
         <div class="activity-meta">
-          <strong>${l.performed_by}</strong> · ${l.timestamp?phTime(l.timestamp):'—'}<br/>
+          <strong>${l.performed_by}</strong> · ${l.timestamp_ph||l.timestamp||l.created_date?phTime(l.timestamp_ph||l.timestamp||l.created_date):'—'}<br/>
           <span style="color:var(--gray2)">${l.detail||''}</span>
         </div>
       </div>
@@ -1398,7 +1458,7 @@ function renderSL(){
   const tot=list.reduce((s,sl)=>s+(sl.sale_total||0),0);
   document.getElementById('slBody').innerHTML=list.map(s=>`
     <tr><td class="fs11 text-gray fw7">${s.sale_id||'—'}</td>
-    <td><div class="fw7 fs12">${s.sale_date||''}</div><div class="fs11 text-gray">${s.created_date?phTime(s.created_date):''}</div></td>
+    <td><div class="fw7 fs12">${phDate(s.sale_date||s.created_date)}</div><div class="fs11 text-gray fs10">${s.created_date?phTime(s.created_date):''}</div></td>
     <td><div class="fw7">${s.product_name||'—'}</div><div class="fs11 text-gray">${s.product_id||''}</div></td>
     <td class="tbl-col-hide"><span class="badge b-cat">${s.category||'—'}</span></td>
     <td class="fw7">${num(s.qty_sold)}</td>
@@ -1423,7 +1483,7 @@ function renderExpenses(){
       <td><div class="fw7">${e.description||'—'}</div></td>
       <td><span class="badge b-cat">${e.category||'—'}</span></td>
       <td class="num text-red fw7">${peso(e.amount)}</td>
-      <td><div class="fw7 fs12">${e.expense_date||''}</div><div class="fs11 text-gray">${e.created_date?phTime(e.created_date):''}</div></td>
+      <td><div class="fw7 fs12">${phDate(e.expense_date||e.created_date)}</div><div class="fs11 text-gray fs10">${e.created_date?phTime(e.created_date):''}</div></td>
       <td class="tbl-col-hide"><span class="badge ${e.recorded_by==='Admin'?'b-admin':'b-asst'}">${e.recorded_by||'Admin'}</span></td>
       <td class="tbl-col-hide fs11 text-gray">${e.notes||'—'}</td>
       <td><button class="btn btn-xs" style="background:var(--red2);color:var(--red);border:1px solid rgba(239,68,68,.3)" onclick="deleteExpense('${e.id}','${(e.description||'').replace(/'/g,"\'")}')">🗑️</button></td>
