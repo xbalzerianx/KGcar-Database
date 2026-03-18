@@ -806,7 +806,7 @@ tbody td{padding:13px 16px;vertical-align:middle}
 <script>
 // ═══════════════════ CONFIG ═══════════════════
 const API = 'https://base44.app/api/apps/69b7cae883aa8d618e49d211/entities';
-let TOK = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxZGZiZTQ4ZC0xNWU3LTRjZjgtYjY1OC0zNDAzYjAxYjYzNDEiLCJjbGllbnRfaWQiOiIxZGZiZTQ4ZC0xNWU3LTRjZjgtYjY1OC0zNDAzYjAxYjYzNDEiLCJhcHBfaWQiOiI2OWI3Y2FlODgzYWE4ZDYxOGU0OWQyMTEiLCJhdWQiOiJiYXNlNDRfYXBpIiwic2NvcGUiOiJhcHAuYWNjZXNzIiwiZXhwIjoxNzczODA1NjI5LCJpYXQiOjE3NzM4MDIwMjl9.guJeqS2ZJ4QaoXJo8dXihvQC0b_QDDu7g7UF9cieFQM';
+let TOK = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxZGZiZTQ4ZC0xNWU3LTRjZjgtYjY1OC0zNDAzYjAxYjYzNDEiLCJjbGllbnRfaWQiOiIxZGZiZTQ4ZC0xNWU3LTRjZjgtYjY1OC0zNDAzYjAxYjYzNDEiLCJhcHBfaWQiOiI2OWI3Y2FlODgzYWE4ZDYxOGU0OWQyMTEiLCJhdWQiOiJiYXNlNDRfYXBpIiwic2NvcGUiOiJhcHAuYWNjZXNzIiwiZXhwIjoxNzczODA1ODgzLCJpYXQiOjE3NzM4MDIyODN9.tjibJFMdPyRXXp0CS3c5hxsEwNEPAP1DBOHLFUt8XMI';
 let HDR = {'Content-Type':'application/json','Authorization':'Bearer '+TOK,'X-App-Id':'69b7cae883aa8d618e49d211'};
 
 // Auto-refresh token every 45 minutes (tokens expire in ~60 mins)
@@ -1610,8 +1610,7 @@ function exportCSV(type) {
   if(!rows.length){ toast('No data in selected period','err'); return; }
 
   const escape = v => `"${String(v).replace(/"/g,'""')}"`;
-  const csv = [header, ...rows].map(r=>r.map(escape).join(',')).join('
-');
+  const csv = [header, ...rows].map(r=>r.map(escape).join(',')).join('\n');
   const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
