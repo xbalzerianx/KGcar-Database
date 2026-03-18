@@ -840,6 +840,30 @@ async function apiDel(e,id){
   return {};
 }
 
+const DEFAULT_PINS = { admin:'070726', asst:'5678' };
+function getPins(){
+  try {
+    const s=localStorage.getItem('kgcar_pins');
+    if(s) return JSON.parse(s);
+  } catch(e){}
+  return {...DEFAULT_PINS};
+}
+function savePins(p){ localStorage.setItem('kgcar_pins',JSON.stringify(p)); }
+const USERS = {
+  admin: { name:'Admin', role:'admin', emoji:'👑' },
+  asst:  { name:'Assistant', role:'asst', emoji:'🧑‍💼' }
+};
+const CAT_COLORS = {
+  'Tires':'#ef4444','Engine Oil':'#f59e0b','Brake Pads':'#3b82f6','Brake Oil':'#8b5cf6',
+  'Filters':'#10b981','Batteries':'#f97316','Wipers':'#06b6d4','Lights':'#eab308',
+  'Belts & Hoses':'#ec4899','Accessories':'#6b7280'
+};
+
+// ═══════════════════ STATE ═══════════════════
+let products=[], sales=[], expenses=[], actLogs=[], curPage='dashboard';
+let editId=null, selProd=null, curFilter='today', filterFrom='', filterTo='';
+let curUser=null, pinEntry='', pinTarget=null, actFilter='all';
+
 // ═══════════════════ LOGIN ═══════════════════
 function selectUser(key) {
   if(!USERS[key]) return;
