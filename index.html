@@ -780,8 +780,21 @@ tbody td{padding:13px 16px;vertical-align:middle}
 <script>
 // ═══════════════════ CONFIG ═══════════════════
 const API = 'https://base44.app/api/apps/69b7cae883aa8d618e49d211/entities';
-const TOK = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxZGZiZTQ4ZC0xNWU3LTRjZjgtYjY1OC0zNDAzYjAxYjYzNDEiLCJjbGllbnRfaWQiOiIxZGZiZTQ4ZC0xNWU3LTRjZjgtYjY1OC0zNDAzYjAxYjYzNDEiLCJhcHBfaWQiOiI2OWI3Y2FlODgzYWE4ZDYxOGU0OWQyMTEiLCJhdWQiOiJiYXNlNDRfYXBpIiwic2NvcGUiOiJhcHAuYWNjZXNzIiwiZXhwIjoxNzczNzk2NjMwLCJpYXQiOjE3NzM3OTMwMzB9.T4MOhASSt8FEGGNDby5azfkNLSDP7iC-hi9ar4UmtH8';
-const HDR = {'Content-Type':'application/json','Authorization':'Bearer '+TOK,'X-App-Id':'69b7cae883aa8d618e49d211'};
+let TOK = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxZGZiZTQ4ZC0xNWU3LTRjZjgtYjY1OC0zNDAzYjAxYjYzNDEiLCJjbGllbnRfaWQiOiIxZGZiZTQ4ZC0xNWU3LTRjZjgtYjY1OC0zNDAzYjAxYjYzNDEiLCJhcHBfaWQiOiI2OWI3Y2FlODgzYWE4ZDYxOGU0OWQyMTEiLCJhdWQiOiJiYXNlNDRfYXBpIiwic2NvcGUiOiJhcHAuYWNjZXNzIiwiZXhwIjoxNzczNzk2OTI5LCJpYXQiOjE3NzM3OTMzMjl9.RaRRCdR8tEIq4MoC2KG5KdwZ_sql-UEtZNLhUQUVnqE';
+let HDR = {'Content-Type':'application/json','Authorization':'Bearer '+TOK,'X-App-Id':'69b7cae883aa8d618e49d211'};
+
+// Auto-refresh token every 45 minutes (tokens expire in ~60 mins)
+async function refreshToken(){
+  try{
+    const r=await fetch('https://base44.app/api/auth/token/service',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Origin':'https://xbalzerianx.github.io'},
+      body:JSON.stringify({app_id:'69b7cae883aa8d618e49d211',client_id:'1dfbe48d-15e7-4cf8-b658-3403b01b6341'})
+    });
+    if(r.ok){const d=await r.json();if(d.access_token){TOK=d.access_token;HDR={'Content-Type':'application/json','Authorization':'Bearer '+TOK,'X-App-Id':'69b7cae883aa8d618e49d211'};}}
+  }catch(e){}
+}
+setInterval(refreshToken,45*60*1000);
 
 const DEFAULT_PINS = { admin:'070726', asst:'5678' };
 function getPins(){
@@ -898,7 +911,10 @@ function today(){
 }
 function phTime(d){
   if(!d) return '—';
-  return new Date(d).toLocaleString('en-PH',{
+  let s=String(d);
+  // DB timestamps lack 'Z' — must treat as UTC or display shifts by 8h
+  if(s.includes('T')&&!s.endsWith('Z')&&!s.includes('+')&&!/[+-]\d{2}:\d{2}$/.test(s)) s+='Z';
+  return new Date(s).toLocaleString('en-PH',{
     timeZone:'Asia/Manila',
     month:'short',day:'numeric',year:'numeric',
     hour:'2-digit',minute:'2-digit',hour12:true
@@ -907,17 +923,20 @@ function phTime(d){
 function phDate(d){
   if(!d) return '—';
   if(d.includes('T')){
-    return new Date(d).toLocaleDateString('en-PH',{timeZone:'Asia/Manila',month:'short',day:'numeric',year:'numeric'});
+    let s=String(d);
+    if(!s.endsWith('Z')&&!s.includes('+')&&!/[+-]\d{2}:\d{2}$/.test(s)) s+='Z';
+    return new Date(s).toLocaleDateString('en-PH',{timeZone:'Asia/Manila',month:'short',day:'numeric',year:'numeric'});
   }
   const [y,mo,da] = d.split('-');
   const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   return `${months[parseInt(mo)-1]} ${parseInt(da)}, ${y}`;
 }
 function phDateShort(d){
-  // Compact: "Mar 18" for mobile
   if(!d) return '—';
   if(d.includes('T')){
-    return new Date(d).toLocaleDateString('en-PH',{timeZone:'Asia/Manila',month:'short',day:'numeric'});
+    let s=String(d);
+    if(!s.endsWith('Z')&&!s.includes('+')&&!/[+-]\d{2}:\d{2}$/.test(s)) s+='Z';
+    return new Date(s).toLocaleDateString('en-PH',{timeZone:'Asia/Manila',month:'short',day:'numeric'});
   }
   const [y,mo,da] = d.split('-');
   const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -950,10 +969,18 @@ async function loadAll(){
       apiGet('KGExpense').catch(()=>[]),
       apiGet('KGActivity').catch(()=>[]),
     ]);
+    sales.forEach(s=>{ if(s.created_date&&s.created_date.includes('T')&&!s.created_date.endsWith('Z')&&!s.created_date.includes('+')) s.created_date+='Z'; });
     sales.sort((a,b)=>new Date(b.created_date||0)-new Date(a.created_date||0));
+    expenses.forEach(e=>{ if(e.created_date&&e.created_date.includes('T')&&!e.created_date.endsWith('Z')&&!e.created_date.includes('+')) e.created_date+='Z'; });
     expenses.sort((a,b)=>new Date(b.created_date||0)-new Date(a.created_date||0));
     // normalize KGActivity: add .timestamp key for renderActLog
-    actLogs.forEach(l=>{ if(!l.timestamp) l.timestamp = l.timestamp_ph||l.created_date; });
+    actLogs.forEach(l=>{
+      // Normalize timestamps - DB stores without Z (treat as UTC)
+      ['timestamp_ph','created_date'].forEach(k=>{
+        if(l[k]&&typeof l[k]==='string'&&l[k].includes('T')&&!l[k].endsWith('Z')&&!l[k].includes('+')) l[k]+='Z';
+      });
+      if(!l.timestamp) l.timestamp = l.timestamp_ph||l.created_date;
+    });
     actLogs.sort((a,b)=>new Date(b.created_date||0)-new Date(a.created_date||0));
     alertBadge();
     renderDash();
@@ -1304,9 +1331,9 @@ function renderActLog(){
   if(!actLogs.length) loadActLogs();
   const who=document.getElementById('actWho').value;
   const list=actLogs.filter(l=>!who||l.performed_by===who);
-  const icons={sale:'💰',add:'➕',edit:'✏️',delete:'🗑️',expense:'💸'};
-  const abClass={sale:'ab-sale',add:'ab-add',edit:'ab-edit',delete:'ab-delete',expense:'ab-expense'};
-  const labels={sale:'Sale',add:'Added',edit:'Edited',delete:'Deleted',expense:'Expense'};
+  const icons={sale:'💰',add:'➕',edit:'✏️',delete:'🗑️',expense:'💸',delete_expense:'🗑️'};
+  const abClass={sale:'ab-sale',add:'ab-add',edit:'ab-edit',delete:'ab-delete',expense:'ab-expense',delete_expense:'ab-delete'};
+  const labels={sale:'Sale',add:'Added',edit:'Edited',delete:'Deleted',expense:'Expense',delete_expense:'Deleted'};
   if(!list.length){
     document.getElementById('actLogBody').innerHTML=`<div class="empty"><div class="empty-icon">🕓</div><div>No activity recorded yet</div></div>`;
     return;
@@ -1515,6 +1542,7 @@ async function deleteExpense(id,desc){
   if(!confirm(`Delete expense "${desc}"?`)) return;
   try {
     await apiDel('KGExpense',id);
+    await logActivity('delete_expense', desc, 'Expense deleted');
     toast('🗑️ Expense deleted','ok');
     await loadAll();
   } catch(e){toast('Failed: '+e.message,'err');}
