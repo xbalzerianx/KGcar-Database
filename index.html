@@ -599,18 +599,25 @@ tbody td{padding:13px 16px;vertical-align:middle}
       <div id="page-actlog" class="page">
         <div class="page-hdr">
           <div class="page-hdr-row">
-            <div><div class="page-title">Activity Log</div><div class="page-sub">Full record of who did what and when</div></div>
+            <div><div class="page-title">Activity Log</div><div class="page-sub">Full record of all changes — products, sales &amp; expenses</div></div>
             <select class="sel" id="actWho" onchange="renderActLog()">
               <option value="">All Staff</option>
               <option value="Admin">Admin</option>
               <option value="Assistant">Assistant</option>
             </select>
           </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+            <button class="filter-btn active" id="alf-all" onclick="setActFilter('all')">All</button>
+            <button class="filter-btn" id="alf-products" onclick="setActFilter('products')">📦 Products</button>
+            <button class="filter-btn" id="alf-sales" onclick="setActFilter('sales')">💰 Sales</button>
+            <button class="filter-btn" id="alf-expenses" onclick="setActFilter('expenses')">💸 Expenses</button>
+          </div>
         </div>
         <div class="card">
           <div id="actLogBody"></div>
         </div>
       </div>
+      
 
       <!-- EXPENSES -->
       <div id="page-expenses" class="page">
@@ -819,7 +826,7 @@ const CAT_COLORS = {
 // ═══════════════════ STATE ═══════════════════
 let products=[], sales=[], expenses=[], actLogs=[], curPage='dashboard';
 let editId=null, selProd=null, curFilter='today', filterFrom='', filterTo='';
-let curUser=null, pinEntry='', pinTarget=null;
+let curUser=null, pinEntry='', pinTarget=null, actFilter='all';
 
 // ═══════════════════ API ═══════════════════
 async function apiGet(e,id=''){const r=await fetch(`${API}/${e}${id?'/'+id:''}?limit=500`,{headers:HDR});if(!r.ok)throw new Error(await r.text());return r.json();}
@@ -1277,8 +1284,20 @@ async function saveProduct(){
     else { const np=await apiPost('KGProduct',d); }
 
     // log activity
-    const action=isEdit?'edit':'add';
-    const changes=isEdit?buildChanges(oldProd,d):'New product added';
+    let action=isEdit?'edit':'add';
+    let changes=isEdit?buildChanges(oldProd,d):'New product added';
+    // Detect restock-only: only stock_qty changed
+    if(isEdit && oldProd){
+      const changedFields=Object.keys(d).filter(k=>k!=='notes'&&String(oldProd[k])!==String(d[k]));
+      if(changedFields.length===1 && changedFields[0]==='stock_qty'){
+        action='restock';
+        const diff=d.stock_qty-oldProd.stock_qty;
+        changes=`Stock: ${oldProd.stock_qty} → ${d.stock_qty} (${diff>0?'+':''}${diff})`;
+      } else if(changedFields.length===1 && changedFields[0]==='unit_price'){
+        action='price_change';
+        changes=`Price: ${peso(oldProd.unit_price)} → ${peso(d.unit_price)}`;
+      }
+    }
     await logActivity(action, d.product_name, changes);
 
     toast(isEdit?'✅ Product updated!':'✅ Product added!','ok');
@@ -1338,30 +1357,61 @@ function loadActLogs(){
     if(stored.length) actLogs = stored;
   } catch(e){ actLogs=[]; }
 }
+function setActFilter(f){
+  actFilter=f;
+  document.querySelectorAll('[id^="alf-"]').forEach(b=>b.classList.remove('active'));
+  const btn=document.getElementById('alf-'+f);
+  if(btn) btn.classList.add('active');
+  renderActLog();
+}
 function renderActLog(){
-  // use in-memory actLogs (already has latest entries)
   if(!actLogs.length) loadActLogs();
-  const who=document.getElementById('actWho').value;
-  const list=actLogs.filter(l=>!who||l.performed_by===who);
-  const icons={sale:'💰',add:'➕',edit:'✏️',delete:'🗑️',expense:'💸',delete_expense:'🗑️'};
-  const abClass={sale:'ab-sale',add:'ab-add',edit:'ab-edit',delete:'ab-delete',expense:'ab-expense',delete_expense:'ab-delete'};
-  const labels={sale:'Sale',add:'Added',edit:'Edited',delete:'Deleted',expense:'Expense',delete_expense:'Deleted'};
+  const who=document.getElementById('actWho')?.value||'';
+  const productTypes=['add','edit','delete','restock','price_change'];
+  const saleTypes=['sale'];
+  const expenseTypes=['expense','delete_expense','edit_expense'];
+  let list=actLogs.filter(l=>{
+    if(who && l.performed_by!==who) return false;
+    if(actFilter==='products') return productTypes.includes(l.action_type);
+    if(actFilter==='sales') return saleTypes.includes(l.action_type);
+    if(actFilter==='expenses') return expenseTypes.includes(l.action_type);
+    return true;
+  });
+  const icons={sale:'💰',add:'➕',edit:'✏️',delete:'🗑️',expense:'💸',delete_expense:'🗑️',edit_expense:'✏️',restock:'📥',price_change:'🏷️',login:'🔑'};
+  const abClass={sale:'ab-sale',add:'ab-add',edit:'ab-edit',delete:'ab-delete',expense:'ab-expense',delete_expense:'ab-delete',edit_expense:'ab-edit',restock:'ab-add',price_change:'ab-edit',login:'ab-edit'};
+  const labels={sale:'Sale',add:'Product Added',edit:'Product Edited',delete:'Product Deleted',expense:'Expense',delete_expense:'Expense Deleted',edit_expense:'Expense Edited',restock:'Restocked',price_change:'Price Changed',login:'Login'};
   if(!list.length){
-    document.getElementById('actLogBody').innerHTML=`<div class="empty"><div class="empty-icon">🕓</div><div>No activity recorded yet</div></div>`;
+    document.getElementById('actLogBody').innerHTML=`<div class="empty"><div class="empty-icon">🕓</div><div class="fw7">No activity yet</div><div style="font-size:12px;color:var(--gray2);margin-top:4px">All sales, expenses, and inventory changes will appear here</div></div>`;
     return;
   }
-  document.getElementById('actLogBody').innerHTML=list.map(l=>`
-    <div class="activity-item">
-      <div class="activity-av ${l.user_role||'admin'}">${l.user_role==='admin'?'👑':'🧑‍💼'}</div>
-      <div class="activity-body">
-        <div class="activity-txt">${icons[l.action_type]||'•'} ${l.product_name}</div>
-        <div class="activity-meta">
-          <strong>${l.performed_by}</strong> · ${l.timestamp_ph||l.timestamp||l.created_date?phTime(l.timestamp_ph||l.timestamp||l.created_date):'—'}<br/>
-          <span style="color:var(--gray2)">${l.detail||''}</span>
+  // Group by date
+  const groups={};
+  list.forEach(l=>{
+    const raw=l.timestamp_ph||l.created_date||l.timestamp||'';
+    const dt=raw?new Date(raw.includes('T')&&!raw.endsWith('Z')&&!raw.includes('+')?(raw+'Z'):raw):null;
+    const label=dt?phDate(dt):'Unknown Date';
+    if(!groups[label]) groups[label]=[];
+    groups[label].push(l);
+  });
+  const todayLabel=phDate(new Date());
+  document.getElementById('actLogBody').innerHTML=Object.entries(groups).map(([date,items])=>`
+    <div style="padding:10px 16px 4px;font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.5px;text-transform:uppercase">${date===todayLabel?'Today — '+date:date}</div>
+    ${items.map(l=>{
+      const raw=l.timestamp_ph||l.created_date||l.timestamp||'';
+      const dt=raw?new Date(raw.includes('T')&&!raw.endsWith('Z')&&!raw.includes('+')?(raw+'Z'):raw):null;
+      const timeStr=dt?phTime(dt):'—';
+      return `<div class="activity-item">
+        <div class="activity-av ${l.user_role||'admin'}">${l.user_role==='admin'?'👑':'🧑‍💼'}</div>
+        <div class="activity-body">
+          <div class="activity-txt">${icons[l.action_type]||'•'} <strong>${l.product_name||'—'}</strong></div>
+          <div class="activity-meta">
+            <strong>${l.performed_by||'Unknown'}</strong> · ${timeStr}<br/>
+            <span style="color:var(--gray2);font-size:11px">${l.detail||''}</span>
+          </div>
         </div>
-      </div>
-      <span class="activity-badge ${abClass[l.action_type]||'ab-edit'}">${labels[l.action_type]||l.action_type}</span>
-    </div>`).join('');
+        <span class="activity-badge ${abClass[l.action_type]||'ab-edit'}">${labels[l.action_type]||l.action_type}</span>
+      </div>`;
+    }).join('')}`).join('');
 }
 
 // ═══════════════════ SALE ═══════════════════
