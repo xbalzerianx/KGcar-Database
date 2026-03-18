@@ -213,6 +213,9 @@ tbody td{padding:13px 16px;vertical-align:middle}
 .inp:focus,.sel2:focus,.ta:focus{border-color:var(--gold)}
 .sel2 option{background:var(--navy3)}.ta{resize:vertical;min-height:72px}
 .inp-hint{font-size:11px;color:var(--gray);margin-top:-3px}
+.size-chip{background:var(--navy3);color:var(--gray);border:1.5px solid var(--navy4);border-radius:20px;padding:4px 11px;font-size:12px;cursor:pointer;transition:all .15s;font-weight:600;white-space:nowrap}
+.size-chip:hover{border-color:var(--gold);color:var(--gold)}
+.size-chip.active{background:rgba(212,168,67,.18);border-color:var(--gold);color:var(--gold)}
 
 /* SALE SEARCH */
 .prod-results{background:var(--navy3);border:1px solid var(--navy4);border-radius:var(--r2);max-height:240px;overflow-y:auto;margin-top:6px;z-index:100}
@@ -702,7 +705,7 @@ tbody td{padding:13px 16px;vertical-align:middle}
       <div class="fg"><label class="label">Product ID</label><input class="inp" id="mPid" placeholder="PRD-021"/></div>
       <div class="fg"><label class="label">SKU (Barcode / Scan Code)</label><input class="inp" id="mSku" placeholder="e.g. 8850123456789"/></div>
       <div class="fg"><label class="label">Category</label>
-        <select class="sel2" id="mCat">
+        <select class="sel2" id="mCat" onchange="toggleTireSizeRow(this.value)">
           <option>Tires</option><option>Engine Oil</option><option>Brake Pads</option><option>Brake Oil</option>
           <option>Filters</option><option>Batteries</option><option>Wipers</option><option>Lights</option>
           <option>Belts & Hoses</option><option>Accessories</option>
@@ -712,6 +715,32 @@ tbody td{padding:13px 16px;vertical-align:middle}
       <div class="fg"><label class="label">Brand</label><input class="inp" id="mBrand" placeholder="Brand"/></div>
       <div class="fg"><label class="label">Unit</label>
         <select class="sel2" id="mUnit"><option>pcs</option><option>set</option><option>liter</option><option>bottle</option><option>pair</option><option>box</option><option>roll</option></select>
+      </div>
+      <div class="fg full" id="tireSizeRow" style="display:none">
+        <label class="label">🔘 Tire Size</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px" id="tireSizeChips">
+          <button type="button" class="size-chip" onclick="pickTireSize(this,'155/65 R13')">155/65 R13</button>
+          <button type="button" class="size-chip" onclick="pickTireSize(this,'165/65 R13')">165/65 R13</button>
+          <button type="button" class="size-chip" onclick="pickTireSize(this,'175/65 R14')">175/65 R14</button>
+          <button type="button" class="size-chip" onclick="pickTireSize(this,'185/60 R14')">185/60 R14</button>
+          <button type="button" class="size-chip" onclick="pickTireSize(this,'185/65 R15')">185/65 R15</button>
+          <button type="button" class="size-chip" onclick="pickTireSize(this,'195/55 R15')">195/55 R15</button>
+          <button type="button" class="size-chip" onclick="pickTireSize(this,'195/65 R15')">195/65 R15</button>
+          <button type="button" class="size-chip" onclick="pickTireSize(this,'205/55 R16')">205/55 R16</button>
+          <button type="button" class="size-chip" onclick="pickTireSize(this,'205/65 R15')">205/65 R15</button>
+          <button type="button" class="size-chip" onclick="pickTireSize(this,'215/60 R16')">215/60 R16</button>
+          <button type="button" class="size-chip" onclick="pickTireSize(this,'215/65 R16')">215/65 R16</button>
+          <button type="button" class="size-chip" onclick="pickTireSize(this,'225/45 R17')">225/45 R17</button>
+          <button type="button" class="size-chip" onclick="pickTireSize(this,'225/55 R17')">225/55 R17</button>
+          <button type="button" class="size-chip" onclick="pickTireSize(this,'225/65 R17')">225/65 R17</button>
+          <button type="button" class="size-chip" onclick="pickTireSize(this,'235/60 R18')">235/60 R18</button>
+          <button type="button" class="size-chip" onclick="pickTireSize(this,'265/60 R18')">265/60 R18</button>
+          <button type="button" class="size-chip" onclick="pickTireSize(this,'265/65 R17')">265/65 R17</button>
+          <button type="button" class="size-chip" onclick="pickTireSize(this,'31x10.5 R15')">31x10.5 R15</button>
+          <button type="button" class="size-chip" onclick="pickTireSize(this,'33x12.5 R17')">33x12.5 R17</button>
+        </div>
+        <input class="inp" id="mTireSize" placeholder="Or type custom size e.g. 195/65 R15" style="margin-top:2px"/>
+        <div class="inp-hint">Select a common size above or type a custom size</div>
       </div>
       <div class="fg"><label class="label">Unit Price (₱)</label><input class="inp" type="number" id="mPrice" placeholder="0.00"/></div>
       <div class="fg"><label class="label">Stock Qty</label><input class="inp" type="number" id="mQty" placeholder="0"/></div>
@@ -1285,13 +1314,24 @@ function renderInv(){
 }
 
 // ═══════════════════ ADD / EDIT ═══════════════════
+function toggleTireSizeRow(cat){
+  const row=document.getElementById('tireSizeRow');
+  if(row) row.style.display=(cat==='Tires')?'':'none';
+}
+function pickTireSize(el,size){
+  document.getElementById('mTireSize').value=size;
+  document.querySelectorAll('.size-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+}
 function openAdd(){
   editId=null;
   document.getElementById('modalTitle').textContent='+ Add New Product';
   document.getElementById('modalSaveBtn').textContent='Save Product';
-  ['mPid','mSku','mName','mBrand','mPrice','mQty','mMin','mNotes'].forEach(id=>document.getElementById(id).value='');
+  ['mPid','mSku','mName','mBrand','mPrice','mQty','mMin','mNotes','mTireSize'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('mCat').value='Tires';
   document.getElementById('mUnit').value='pcs';
+  document.querySelectorAll('.size-chip').forEach(c=>c.classList.remove('active'));
+  toggleTireSizeRow('Tires');
   document.getElementById('prodModal').classList.add('open');
 }
 function openEdit(id){
@@ -1309,6 +1349,11 @@ function openEdit(id){
   document.getElementById('mQty').value=p.stock_qty||'';
   document.getElementById('mMin').value=p.min_stock||'';
   document.getElementById('mNotes').value=p.notes||'';
+  document.getElementById('mTireSize').value=p.tire_size||'';
+  document.querySelectorAll('.size-chip').forEach(c=>{
+    c.classList.toggle('active', c.textContent.trim()===(p.tire_size||'').trim());
+  });
+  toggleTireSizeRow(p.category||'Tires');
   document.getElementById('prodModal').classList.add('open');
 }
 function closeModal(){document.getElementById('prodModal').classList.remove('open');}
@@ -1324,6 +1369,7 @@ async function saveProduct(){
     stock_qty:parseInt(document.getElementById('mQty').value)||0,
     min_stock:parseInt(document.getElementById('mMin').value)||0,
     notes:document.getElementById('mNotes').value.trim(),
+    tire_size:document.getElementById('mCat').value==='Tires'?(document.getElementById('mTireSize').value.trim()||''):'',
   };
   if(!d.product_name){toast('Product name is required','err');return;}
   const btn=document.getElementById('modalSaveBtn');
