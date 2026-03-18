@@ -41,6 +41,8 @@ button,input,select,textarea{font-family:inherit}
 .user-name{font-size:14px;font-weight:700}
 .user-role{font-size:11px;color:var(--gray);margin-top:2px}
 .pin-section{display:none}
+.pin-input-wrap{width:100%}
+#pinInput:focus{border-color:var(--gold) !important;box-shadow:0 0 0 3px rgba(212,168,67,0.2)}
 .pin-label{font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--gray);margin-bottom:10px}
 .pin-dots{display:flex;gap:10px;margin-bottom:16px;justify-content:center}
 .pin-dot{width:14px;height:14px;border-radius:50%;background:var(--navy3);border:2px solid var(--navy4);transition:all .15s}
@@ -352,38 +354,40 @@ tbody td{padding:13px 16px;vertical-align:middle}
     </div>
     <div class="login-title">Welcome back 👋</div>
     <div class="login-desc">Select your account to continue</div>
-    <div class="login-users" id="loginUsers">
-      <div class="user-card" data-user="admin" onclick="selectUser('admin')">
-        <div class="user-avatar admin">👑</div>
-        <div><div class="user-name">Admin</div><div class="user-role">Administrator · Full Access</div></div>
-      </div>
-      <div class="user-card" data-user="asst" onclick="selectUser('asst')">
-        <div class="user-avatar asst">🧑‍💼</div>
-        <div><div class="user-name">Assistant</div><div class="user-role">Staff · Full Access</div></div>
+
+    <!-- USER SELECTION -->
+    <div id="loginStep1">
+      <div class="login-users" id="loginUsers">
+        <div class="user-card" data-user="admin" onclick="selectUser('admin')">
+          <div class="user-avatar admin">👑</div>
+          <div><div class="user-name">Admin</div><div class="user-role">Administrator · Full Access</div></div>
+          <div style="margin-left:auto;color:var(--gold);font-size:18px">›</div>
+        </div>
+        <div class="user-card" data-user="asst" onclick="selectUser('asst')">
+          <div class="user-avatar asst">🧑‍💼</div>
+          <div><div class="user-name">Assistant</div><div class="user-role">Staff · Full Access</div></div>
+          <div style="margin-left:auto;color:var(--gold);font-size:18px">›</div>
+        </div>
       </div>
     </div>
-    <div class="pin-section" id="pinSection">
-      <div class="pin-label" id="pinLabel">Enter PIN for Admin</div>
-      <div class="pin-dots" id="pinDots">
-        <div class="pin-dot" id="d0"></div><div class="pin-dot" id="d1"></div>
-        <div class="pin-dot" id="d2"></div><div class="pin-dot" id="d3"></div>
-        <div class="pin-dot" id="d4"></div><div class="pin-dot" id="d5"></div>
+
+    <!-- PIN ENTRY (step 2) -->
+    <div id="loginStep2" style="display:none">
+      <div id="pinLabel2" style="font-size:15px;font-weight:600;color:var(--white);margin-bottom:20px;text-align:center">Enter PIN for Admin</div>
+      <div class="pin-input-wrap">
+        <input type="password" id="pinInput" inputmode="numeric" pattern="[0-9]*" autocomplete="off"
+          maxlength="6" placeholder="••••••"
+          style="width:100%;padding:16px;font-size:28px;letter-spacing:8px;text-align:center;background:var(--navy3);border:2px solid var(--navy4);border-radius:12px;color:var(--white);outline:none;box-sizing:border-box"
+          oninput="onPinInput()" onkeydown="if(event.key==='Enter')doLogin()"/>
+        <div id="pinErr2" style="color:var(--red);font-size:13px;text-align:center;margin-top:10px;min-height:18px"></div>
       </div>
-      <div class="pin-pad">
-        <button class="pin-btn" onclick="pinTap('1')">1</button>
-        <button class="pin-btn" onclick="pinTap('2')">2</button>
-        <button class="pin-btn" onclick="pinTap('3')">3</button>
-        <button class="pin-btn" onclick="pinTap('4')">4</button>
-        <button class="pin-btn" onclick="pinTap('5')">5</button>
-        <button class="pin-btn" onclick="pinTap('6')">6</button>
-        <button class="pin-btn" onclick="pinTap('7')">7</button>
-        <button class="pin-btn" onclick="pinTap('8')">8</button>
-        <button class="pin-btn" onclick="pinTap('9')">9</button>
-        <button class="pin-btn del" onclick="pinBack()">← Back</button>
-        <button class="pin-btn" onclick="pinTap('0')">0</button>
-        <button class="pin-btn del" onclick="cancelPin()">✕</button>
+      <div style="display:flex;gap:10px;margin-top:20px">
+        <button onclick="cancelLogin()" style="flex:1;padding:14px;background:var(--navy3);border:1px solid var(--navy4);border-radius:10px;color:var(--gray);font-size:14px;font-weight:600;cursor:pointer">← Back</button>
+        <button onclick="doLogin()" id="loginBtn" style="flex:2;padding:14px;background:var(--gold);border:none;border-radius:10px;color:var(--navy);font-size:14px;font-weight:700;cursor:pointer">Enter →</button>
       </div>
-      <div class="pin-err" id="pinErr"></div>
+      <div style="text-align:center;margin-top:14px">
+        <span id="resetHint" style="font-size:12px;color:var(--gray2)">Default Admin PIN: <code style="color:var(--gold);letter-spacing:2px">070726</code> · Assistant: <code style="color:var(--gold);letter-spacing:2px">5678</code></span>
+      </div>
     </div>
   </div>
 </div>
@@ -853,39 +857,38 @@ function selectUser(key) {
   if(!USERS[key]) return;
   pinTarget = key;
   pinEntry = '';
-  document.querySelectorAll('.user-card').forEach(c=>c.classList.toggle('sel', c.dataset.user===key));
-  document.getElementById('loginUsers').style.display='none';
-  document.getElementById('pinSection').style.display='block';
-  document.getElementById('pinLabel').textContent = 'Enter PIN for ' + USERS[key].name;
-  updateDots();
+  document.getElementById('loginStep1').style.display='none';
+  document.getElementById('loginStep2').style.display='block';
+  document.getElementById('pinLabel2').textContent = 'Enter PIN for ' + USERS[key].name;
+  document.getElementById('pinErr2').textContent = '';
+  document.getElementById('pinInput').value = '';
+  setTimeout(()=>document.getElementById('pinInput').focus(), 100);
 }
-function pinTap(d) {
-  if(pinEntry.length>=6) return;
-  pinEntry += d;
-  updateDots();
-  if(pinEntry.length===6) setTimeout(checkPin, 150);
+function cancelLogin() {
+  pinTarget = null;
+  pinEntry = '';
+  document.getElementById('loginStep1').style.display='block';
+  document.getElementById('loginStep2').style.display='none';
+  document.getElementById('pinInput').value = '';
+  document.getElementById('pinErr2').textContent = '';
 }
-function pinBack() { pinEntry=pinEntry.slice(0,-1); updateDots(); document.getElementById('pinErr').textContent=''; }
-function cancelPin() {
-  pinEntry=''; pinTarget=null;
-  document.getElementById('loginUsers').style.display='flex';
-  document.getElementById('pinSection').style.display='none';
-  document.querySelectorAll('.user-card').forEach(c=>c.classList.remove('sel'));
-  updateDots();
+function onPinInput() {
+  const v = document.getElementById('pinInput').value;
+  document.getElementById('pinErr2').textContent = '';
+  if(v.length === 6) setTimeout(doLogin, 150);
 }
-function updateDots() {
-  for(let i=0;i<6;i++) document.getElementById('d'+i).className='pin-dot'+(i<pinEntry.length?' filled':'');
-}
-function checkPin() {
+function doLogin() {
   const pins = getPins();
-  if(pinEntry === pins[pinTarget]) {
+  const entered = document.getElementById('pinInput').value.trim();
+  if(!entered) { document.getElementById('pinErr2').textContent = '❌ Please enter your PIN'; return; }
+  if(entered === pins[pinTarget]) {
     curUser = { key: pinTarget, ...USERS[pinTarget] };
     localStorage.setItem('kgcar_user', JSON.stringify(curUser));
     launchApp();
   } else {
-    document.getElementById('pinErr').textContent = '❌ Wrong PIN, try again';
-    pinEntry = '';
-    updateDots();
+    document.getElementById('pinErr2').textContent = '❌ Wrong PIN, try again';
+    document.getElementById('pinInput').value = '';
+    document.getElementById('pinInput').focus();
   }
 }
 function launchApp() {
@@ -909,15 +912,14 @@ function logout() {
   document.getElementById('appWrap').classList.remove('visible');
   document.getElementById('mobNav') && document.getElementById('mobNav').classList.remove('show');
   document.getElementById('loginWrap').style.display='flex';
-  cancelPin();
-  document.getElementById('loginUsers').style.display='flex';
+  cancelLogin();
 }
 
 // auto-login if remembered
 window.addEventListener('DOMContentLoaded', () => {
-  const saved = localStorage.getItem('kgcar_user');
-  if(saved) { try { curUser=JSON.parse(saved); launchApp(); } catch(e){} }
   clock(); setInterval(clock,30000);
+  // Show login screen fresh every time (no auto-login)
+  document.getElementById('loginWrap').style.display='flex';
 });
 
 // ═══════════════════ UTILS ═══════════════════
@@ -1026,19 +1028,32 @@ async function go(page){
   document.querySelectorAll('.sb-item,.mob-item').forEach(b=>b.classList.toggle('active',b.dataset.page===page));
   document.getElementById('tbTitle').textContent=TITLES[page]||'';
   if(page==='sale')resetSale();
-  // Always refresh activity log from DB when navigating to it
+  // Refresh ALL data when navigating to activity log
   if(page==='actlog'){
     document.getElementById('actLogBody').innerHTML='<div class="loader"><div class="spin"></div>Loading…</div>';
     try {
-      const fresh = await apiGet('KGActivity');
-      fresh.forEach(l=>{
+      const [freshAct, freshSales, freshExp] = await Promise.all([
+        apiGet('KGActivity').catch(()=>[]),
+        apiGet('KGSale').catch(()=>[]),
+        apiGet('KGExpense').catch(()=>[]),
+      ]);
+      // Normalize KGActivity timestamps
+      freshAct.forEach(l=>{
         ['timestamp_ph','created_date'].forEach(k=>{
           if(l[k]&&typeof l[k]==='string'&&l[k].includes('T')&&!l[k].endsWith('Z')&&!l[k].includes('+')) l[k]+='Z';
         });
         if(!l.timestamp) l.timestamp = l.timestamp_ph||l.created_date;
       });
-      fresh.sort((a,b)=>new Date(b.created_date||0)-new Date(a.created_date||0));
-      actLogs = fresh;
+      // Normalize KGExpense timestamps  
+      freshExp.forEach(e=>{
+        if(e.created_date&&typeof e.created_date==='string'&&e.created_date.includes('T')&&!e.created_date.endsWith('Z')&&!e.created_date.includes('+')) e.created_date+='Z';
+      });
+      freshAct.sort((a,b)=>new Date(b.created_date||0)-new Date(a.created_date||0));
+      freshSales.sort((a,b)=>new Date(b.created_date||0)-new Date(a.created_date||0));
+      freshExp.sort((a,b)=>new Date(b.created_date||0)-new Date(a.created_date||0));
+      actLogs = freshAct;
+      sales = freshSales;
+      expenses = freshExp;
     } catch(e){ console.error('actlog load failed:', e); }
   }
   render();
