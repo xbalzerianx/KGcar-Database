@@ -608,7 +608,7 @@ tbody td{padding:13px 16px;vertical-align:middle}
           </div>
         </div>
         <div class="card">
-          <div id="actLogBody"><div class="loader"><div class="spin"></div>Loading…</div></div>
+          <div id="actLogBody"></div>
         </div>
       </div>
 
@@ -664,6 +664,7 @@ tbody td{padding:13px 16px;vertical-align:middle}
     <button class="mob-item" data-page="sale" onclick="go('sale')"><span class="mob-item-icon">💰</span>Sell</button>
     <button class="mob-item" data-page="saleslog" onclick="go('saleslog')"><span class="mob-item-icon">📋</span>Log</button>
     <button class="mob-item" data-page="expenses" onclick="go('expenses')"><span class="mob-item-icon">💸</span>Expenses</button>
+<button class="mob-item" data-page="actlog" onclick="go('actlog')"><span class="mob-item-icon">🕓</span>Logs</button>
     <button class="mob-item" data-page="alerts" onclick="go('alerts')"><span class="mob-item-icon">⚠️</span>Alerts</button>
   </div>
 </nav>
@@ -986,6 +987,11 @@ async function loadAll(){
     renderDash();
     renderExpenses();
     render();
+    // Pre-render actlog so spinner is removed even if not navigated yet
+    if(curPage!=='actlog') {
+      const body=document.getElementById('actLogBody');
+      if(body&&body.innerHTML.includes('Loading')) renderActLog();
+    }
   } catch(e){toast('Failed to load: '+e.message,'err');}
 }
 
@@ -1000,12 +1006,18 @@ async function go(page){
   if(page==='sale')resetSale();
   // Always refresh activity log from DB when navigating to it
   if(page==='actlog'){
+    document.getElementById('actLogBody').innerHTML='<div class="loader"><div class="spin"></div>Loading…</div>';
     try {
       const fresh = await apiGet('KGActivity');
-      fresh.forEach(l=>{ if(!l.timestamp) l.timestamp = l.timestamp_ph||l.created_date; });
+      fresh.forEach(l=>{
+        ['timestamp_ph','created_date'].forEach(k=>{
+          if(l[k]&&typeof l[k]==='string'&&l[k].includes('T')&&!l[k].endsWith('Z')&&!l[k].includes('+')) l[k]+='Z';
+        });
+        if(!l.timestamp) l.timestamp = l.timestamp_ph||l.created_date;
+      });
       fresh.sort((a,b)=>new Date(b.created_date||0)-new Date(a.created_date||0));
       actLogs = fresh;
-    } catch(e){}
+    } catch(e){ console.error('actlog load failed:', e); }
   }
   render();
 }
