@@ -806,21 +806,11 @@ tbody td{padding:13px 16px;vertical-align:middle}
 <script>
 // ═══════════════════ CONFIG ═══════════════════
 const API = 'https://base44.app/api/apps/69b7cae883aa8d618e49d211/entities';
-let TOK = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxZGZiZTQ4ZC0xNWU3LTRjZjgtYjY1OC0zNDAzYjAxYjYzNDEiLCJjbGllbnRfaWQiOiIxZGZiZTQ4ZC0xNWU3LTRjZjgtYjY1OC0zNDAzYjAxYjYzNDEiLCJhcHBfaWQiOiI2OWI3Y2FlODgzYWE4ZDYxOGU0OWQyMTEiLCJhdWQiOiJiYXNlNDRfYXBpIiwic2NvcGUiOiJhcHAuYWNjZXNzIiwiZXhwIjoxNzczODA0NzI5LCJpYXQiOjE3NzM4MDExMjl9.B8sju9TyC5R9XKFTz_zVFT7T0T7Vc4evWZ9Rj1xpCCA';
+let TOK = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxZGZiZTQ4ZC0xNWU3LTRjZjgtYjY1OC0zNDAzYjAxYjYzNDEiLCJjbGllbnRfaWQiOiIxZGZiZTQ4ZC0xNWU3LTRjZjgtYjY1OC0zNDAzYjAxYjYzNDEiLCJhcHBfaWQiOiI2OWI3Y2FlODgzYWE4ZDYxOGU0OWQyMTEiLCJhdWQiOiJiYXNlNDRfYXBpIiwic2NvcGUiOiJhcHAuYWNjZXNzIiwiZXhwIjoxNzczODA1MTA4LCJpYXQiOjE3NzM4MDE1MDh9.gIypI2vdfxZzS2KgYk1mUdB0efIABBQYFkQrnFg0m_Y';
 let HDR = {'Content-Type':'application/json','Authorization':'Bearer '+TOK,'X-App-Id':'69b7cae883aa8d618e49d211'};
 
 // Auto-refresh token every 45 minutes (tokens expire in ~60 mins)
-async function refreshToken(){
-  try{
-    const r=await fetch('https://base44.app/api/auth/token/service',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','Origin':'https://xbalzerianx.github.io'},
-      body:JSON.stringify({app_id:'69b7cae883aa8d618e49d211',client_id:'1dfbe48d-15e7-4cf8-b658-3403b01b6341'})
-    });
-    if(r.ok){const d=await r.json();if(d.access_token){TOK=d.access_token;HDR={'Content-Type':'application/json','Authorization':'Bearer '+TOK,'X-App-Id':'69b7cae883aa8d618e49d211'};}}
-  }catch(e){}
-}
-setInterval(refreshToken,45*60*1000);
+// Token is permanent service token - no refresh needed
 
 const DEFAULT_PINS = { admin:'070726', asst:'5678' };
 function getPins(){
@@ -1620,8 +1610,7 @@ function exportCSV(type) {
   if(!rows.length){ toast('No data in selected period','err'); return; }
 
   const escape = v => `"${String(v).replace(/"/g,'""')}"`;
-  const csv = [header, ...rows].map(r=>r.map(escape).join(',')).join('
-');
+  const csv = [header, ...rows].map(r=>r.map(escape).join(',')).join('\n');
   const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
