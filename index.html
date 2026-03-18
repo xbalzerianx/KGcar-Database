@@ -431,7 +431,7 @@ tbody td{padding:13px 16px;vertical-align:middle}
       <div id="sbChangePinBtn" style="display:none;margin-bottom:10px">
         <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:center" onclick="openChangePin()">🔑 Change PINs</button>
       </div>
-      <div class="sb-footer-text">KGCAR Admin v2.0</div>
+      <div class="sb-footer-text">KGCAR Admin v3.0 · Supabase</div>
     </div>
   </nav>
 
@@ -805,42 +805,40 @@ tbody td{padding:13px 16px;vertical-align:middle}
 
 <script>
 // ═══════════════════ CONFIG ═══════════════════
-const API = 'https://base44.app/api/apps/69b7cae883aa8d618e49d211/entities';
-let TOK = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxZGZiZTQ4ZC0xNWU3LTRjZjgtYjY1OC0zNDAzYjAxYjYzNDEiLCJjbGllbnRfaWQiOiIxZGZiZTQ4ZC0xNWU3LTRjZjgtYjY1OC0zNDAzYjAxYjYzNDEiLCJhcHBfaWQiOiI2OWI3Y2FlODgzYWE4ZDYxOGU0OWQyMTEiLCJhdWQiOiJiYXNlNDRfYXBpIiwic2NvcGUiOiJhcHAuYWNjZXNzIiwiZXhwIjoxNzczODA4MzI5LCJpYXQiOjE3NzM4MDQ3Mjl9.QffVQWeif5GjehzFzX5TDw6ZYVBzUwG_-FiXaFiW6Tw';
-let HDR = {'Content-Type':'application/json','Authorization':'Bearer '+TOK,'X-App-Id':'69b7cae883aa8d618e49d211'};
+const SB_URL = 'https://stigramvmyckdmyipvnj.supabase.co/rest/v1';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN0aWdyYW12bXlja2RteWlwdm5qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4MDQ3MjksImV4cCI6MjA4OTM4MDcyOX0.UuOy28Y_TXU_uJ3qPRaGyPXu23LWrS37FG38asyUOn8';
+const SB_HDR = {'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY};
+const TBL = {KGProduct:'kg_products',KGSale:'kg_sales',KGExpense:'kg_expenses',KGActivity:'kg_activity'};
 
-// Auto-refresh token every 45 minutes (tokens expire in ~60 mins)
-// Token is permanent service token - no refresh needed
-
-const DEFAULT_PINS = { admin:'070726', asst:'5678' };
-function getPins(){
-  try {
-    const s=localStorage.getItem('kgcar_pins');
-    if(s) return JSON.parse(s);
-  } catch(e){}
-  return {...DEFAULT_PINS};
+// ═══════════════════ API (Supabase) ═══════════════════
+async function apiGet(e,id=''){
+  const tbl=TBL[e]||e;
+  const url=id?`${SB_URL}/${tbl}?id=eq.${id}&select=*`:`${SB_URL}/${tbl}?select=*&limit=1000&order=created_date.desc`;
+  const r=await fetch(url,{headers:SB_HDR});
+  if(!r.ok)throw new Error(await r.text());
+  const d=await r.json();
+  return id?(d[0]||null):d;
 }
-function savePins(p){ localStorage.setItem('kgcar_pins',JSON.stringify(p)); }
-const USERS = {
-  admin: { name:'Admin', role:'admin', emoji:'👑' },
-  asst:  { name:'Assistant', role:'asst', emoji:'🧑‍💼' }
-};
-const CAT_COLORS = {
-  'Tires':'#ef4444','Engine Oil':'#f59e0b','Brake Pads':'#3b82f6','Brake Oil':'#8b5cf6',
-  'Filters':'#10b981','Batteries':'#f97316','Wipers':'#06b6d4','Lights':'#eab308',
-  'Belts & Hoses':'#ec4899','Accessories':'#6b7280'
-};
-
-// ═══════════════════ STATE ═══════════════════
-let products=[], sales=[], expenses=[], actLogs=[], curPage='dashboard';
-let editId=null, selProd=null, curFilter='today', filterFrom='', filterTo='';
-let curUser=null, pinEntry='', pinTarget=null, actFilter='all';
-
-// ═══════════════════ API ═══════════════════
-async function apiGet(e,id=''){const r=await fetch(`${API}/${e}${id?'/'+id:''}?limit=500`,{headers:HDR});if(!r.ok)throw new Error(await r.text());return r.json();}
-async function apiPost(e,d){const r=await fetch(`${API}/${e}`,{method:'POST',headers:HDR,body:JSON.stringify(d)});if(!r.ok)throw new Error(await r.text());return r.json();}
-async function apiPut(e,id,d){const r=await fetch(`${API}/${e}/${id}`,{method:'PUT',headers:HDR,body:JSON.stringify(d)});if(!r.ok)throw new Error(await r.text());return r.json();}
-async function apiDel(e,id){const r=await fetch(`${API}/${e}/${id}`,{method:'DELETE',headers:HDR});if(!r.ok)throw new Error(await r.text());return r.json().catch(()=>({}));}
+async function apiPost(e,d){
+  const tbl=TBL[e]||e;
+  const r=await fetch(`${SB_URL}/${tbl}`,{method:'POST',headers:{...SB_HDR,'Prefer':'return=representation'},body:JSON.stringify(d)});
+  if(!r.ok)throw new Error(await r.text());
+  const res=await r.json();
+  return Array.isArray(res)?res[0]:res;
+}
+async function apiPut(e,id,d){
+  const tbl=TBL[e]||e;
+  const r=await fetch(`${SB_URL}/${tbl}?id=eq.${id}`,{method:'PATCH',headers:{...SB_HDR,'Prefer':'return=representation'},body:JSON.stringify(d)});
+  if(!r.ok)throw new Error(await r.text());
+  const res=await r.json();
+  return Array.isArray(res)?res[0]:res;
+}
+async function apiDel(e,id){
+  const tbl=TBL[e]||e;
+  const r=await fetch(`${SB_URL}/${tbl}?id=eq.${id}`,{method:'DELETE',headers:SB_HDR});
+  if(!r.ok)throw new Error(await r.text());
+  return {};
+}
 
 // ═══════════════════ LOGIN ═══════════════════
 function selectUser(key) {
