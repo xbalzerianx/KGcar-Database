@@ -703,7 +703,6 @@ tbody td{padding:13px 16px;vertical-align:middle}
     <div class="modal-title" id="modalTitle">+ Add Product</div>
     <div class="form-grid">
       <div class="fg"><label class="label">Product ID</label><input class="inp" id="mPid" placeholder="PRD-021"/></div>
-      <div class="fg"><label class="label">SKU (Barcode / Scan Code)</label><input class="inp" id="mSku" placeholder="e.g. 8850123456789"/></div>
       <div class="fg"><label class="label">Category</label>
         <select class="sel2" id="mCat" onchange="toggleTireSizeRow(this.value)">
           <option>Tires</option><option>Engine Oil</option><option>Brake Pads</option><option>Brake Oil</option>
@@ -1327,7 +1326,7 @@ function openAdd(){
   editId=null;
   document.getElementById('modalTitle').textContent='+ Add New Product';
   document.getElementById('modalSaveBtn').textContent='Save Product';
-  ['mPid','mSku','mName','mBrand','mPrice','mQty','mMin','mNotes','mTireSize'].forEach(id=>document.getElementById(id).value='');
+  ['mPid','mName','mBrand','mPrice','mQty','mMin','mNotes','mTireSize'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('mCat').value='Tires';
   document.getElementById('mUnit').value='pcs';
   document.querySelectorAll('.size-chip').forEach(c=>c.classList.remove('active'));
@@ -1340,7 +1339,6 @@ function openEdit(id){
   document.getElementById('modalTitle').textContent='✏️ Edit Product';
   document.getElementById('modalSaveBtn').textContent='Update Product';
   document.getElementById('mPid').value=p.product_id||'';
-  document.getElementById('mSku').value=p.sku||'';
   document.getElementById('mName').value=p.product_name||'';
   document.getElementById('mBrand').value=p.brand||'';
   document.getElementById('mCat').value=p.category||'Tires';
@@ -1360,7 +1358,6 @@ function closeModal(){document.getElementById('prodModal').classList.remove('ope
 async function saveProduct(){
   const d={
     product_id:document.getElementById('mPid').value.trim(),
-    sku:document.getElementById('mSku').value.trim(),
     product_name:document.getElementById('mName').value.trim(),
     brand:document.getElementById('mBrand').value.trim(),
     category:document.getElementById('mCat').value,
