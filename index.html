@@ -802,7 +802,7 @@ tbody td{padding:13px 16px;vertical-align:middle}
 <script>
 // ═══════════════════ CONFIG ═══════════════════
 const API = 'https://base44.app/api/apps/69b7cae883aa8d618e49d211/entities';
-let TOK = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxZGZiZTQ4ZC0xNWU3LTRjZjgtYjY1OC0zNDAzYjAxYjYzNDEiLCJjbGllbnRfaWQiOiIxZGZiZTQ4ZC0xNWU3LTRjZjgtYjY1OC0zNDAzYjAxYjYzNDEiLCJhcHBfaWQiOiI2OWI3Y2FlODgzYWE4ZDYxOGU0OWQyMTEiLCJhdWQiOiJiYXNlNDRfYXBpIiwic2NvcGUiOiJhcHAuYWNjZXNzIiwiZXhwIjoxNzczODAyOTM0LCJpYXQiOjE3NzM3OTkzMzR9.yPETDMFQdk1HDqOGsGXhz2a4bzjImD6Iqh3P9a1Kmyk';
+let TOK = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxZGZiZTQ4ZC0xNWU3LTRjZjgtYjY1OC0zNDAzYjAxYjYzNDEiLCJjbGllbnRfaWQiOiIxZGZiZTQ4ZC0xNWU3LTRjZjgtYjY1OC0zNDAzYjAxYjYzNDEiLCJhcHBfaWQiOiI2OWI3Y2FlODgzYWE4ZDYxOGU0OWQyMTEiLCJhdWQiOiJiYXNlNDRfYXBpIiwic2NvcGUiOiJhcHAuYWNjZXNzIiwiZXhwIjoxNzczODAzODI5LCJpYXQiOjE3NzM4MDAyMjl9.B5BcrGOAjtp7KoGjmphrMhaZivbz4WgTV9U_tNF_Wjk';
 let HDR = {'Content-Type':'application/json','Authorization':'Bearer '+TOK,'X-App-Id':'69b7cae883aa8d618e49d211'};
 
 // Auto-refresh token every 45 minutes (tokens expire in ~60 mins)
@@ -1604,7 +1604,8 @@ function exportCSV(type) {
   if(!rows.length){ toast('No data in selected period','err'); return; }
 
   const escape = v => `"${String(v).replace(/"/g,'""')}"`;
-  const csv = [header, ...rows].map(r=>r.map(escape).join(',')).join('\n');
+  const csv = [header, ...rows].map(r=>r.map(escape).join(',')).join('
+');
   const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -1652,7 +1653,7 @@ function renderExpenses(){
       <td><div class="fw7 fs12">${phDate(e.expense_date||e.created_date)}</div><div class="fs11 text-gray fs10">${e.created_date?phTime(e.created_date):''}</div></td>
       <td class="tbl-col-hide"><span class="badge ${e.recorded_by==='Admin'?'b-admin':'b-asst'}">${e.recorded_by||'Admin'}</span></td>
       <td class="tbl-col-hide fs11 text-gray">${e.notes||'—'}</td>
-      <td><button class="btn btn-xs" style="background:var(--red2);color:var(--red);border:1px solid rgba(239,68,68,.3)" onclick="deleteExpense('${e.id}','${(e.description||'').replace(/'/g,"\'")}')">🗑️</button></td>
+      <td><button class="btn btn-xs" style="background:var(--red2);color:var(--red);border:1px solid rgba(239,68,68,.3)" onclick="deleteExpense('${e.id}','${(e.description||'').replace(/'/g,"'")}')">🗑️</button></td>
     </tr>`).join('')||`<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--gray)">No expenses in this period</td></tr>`;
   document.getElementById('expFooter').innerHTML=list.length?`${list.length} expenses · Total: <span class="num text-red fw7" style="font-size:15px">${peso(tot)}</span>`:'';
 }
