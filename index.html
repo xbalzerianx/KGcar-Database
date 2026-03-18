@@ -948,10 +948,14 @@ function today(){
 }
 function phTime(d){
   if(!d) return '—';
-  let s=String(d);
-  // DB timestamps lack 'Z' — must treat as UTC or display shifts by 8h
-  if(s.includes('T')&&!s.endsWith('Z')&&!s.includes('+')&&!/[+-]\d{2}:\d{2}$/.test(s)) s+='Z';
-  return new Date(s).toLocaleString('en-PH',{
+  let dt = (d instanceof Date) ? d : null;
+  if(!dt){
+    let s=String(d);
+    if(s.includes('T')&&!s.endsWith('Z')&&!s.includes('+')&&!/[+-]\d{2}:\d{2}$/.test(s)) s+='Z';
+    dt = new Date(s);
+  }
+  if(isNaN(dt)) return '—';
+  return dt.toLocaleString('en-PH',{
     timeZone:'Asia/Manila',
     month:'short',day:'numeric',year:'numeric',
     hour:'2-digit',minute:'2-digit',hour12:true
@@ -959,12 +963,17 @@ function phTime(d){
 }
 function phDate(d){
   if(!d) return '—';
-  if(d.includes('T')){
-    let s=String(d);
+  // Handle Date objects directly
+  if(d instanceof Date){
+    if(isNaN(d)) return '—';
+    return d.toLocaleDateString('en-PH',{timeZone:'Asia/Manila',month:'short',day:'numeric',year:'numeric'});
+  }
+  let s = String(d);
+  if(s.includes('T')){
     if(!s.endsWith('Z')&&!s.includes('+')&&!/[+-]\d{2}:\d{2}$/.test(s)) s+='Z';
     return new Date(s).toLocaleDateString('en-PH',{timeZone:'Asia/Manila',month:'short',day:'numeric',year:'numeric'});
   }
-  const [y,mo,da] = d.split('-');
+  const [y,mo,da] = s.split('-');
   const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   return `${months[parseInt(mo)-1]} ${parseInt(da)}, ${y}`;
 }
