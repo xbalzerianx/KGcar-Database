@@ -102,6 +102,18 @@ button,input,select,textarea{font-family:inherit}
 .filter-bar{display:flex;align-items:center;gap:6px;margin-bottom:16px;flex-wrap:wrap;background:var(--navy2);border:1px solid var(--navy3);border-radius:var(--r);padding:10px 14px}
 .filter-bar-label{font-size:12px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.8px;margin-right:4px;white-space:nowrap}
 .filter-btn{background:var(--navy3);border:1px solid var(--navy4);border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;color:var(--gray);cursor:pointer;transition:all .15s;white-space:nowrap}
+.al-tab{background:var(--navy3);border:1px solid var(--navy4);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:600;color:var(--gray);cursor:pointer;transition:all .15s;white-space:nowrap}
+.al-tab:hover{border-color:var(--gold);color:var(--gold)}
+.al-tab.active{background:var(--gold3);border-color:var(--gold);color:var(--gold)}
+.al-row{display:flex;align-items:flex-start;gap:12px;padding:13px 16px;border-bottom:1px solid var(--navy3)}
+.al-row:last-child{border-bottom:none}
+.al-icon{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;margin-top:2px}
+.al-body{flex:1;min-width:0}
+.al-name{font-weight:600;font-size:13px;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.al-detail{font-size:11px;color:var(--gray);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.al-meta{font-size:10px;color:var(--gray2);margin-top:3px}
+.al-badge{padding:3px 8px;border-radius:20px;font-size:10px;font-weight:700;white-space:nowrap;flex-shrink:0;margin-top:4px}
+.al-date-hdr{padding:8px 16px 4px;font-size:10px;font-weight:700;color:var(--gold);letter-spacing:.8px;text-transform:uppercase;background:var(--navy2);border-bottom:1px solid var(--navy3)}
 .filter-btn:hover{border-color:var(--gold);color:var(--gold)}
 .filter-btn.active{background:var(--gold3);border-color:var(--gold);color:var(--gold)}
 .filter-divider{width:1px;height:24px;background:var(--navy3);margin:0 4px}
@@ -599,25 +611,27 @@ tbody td{padding:13px 16px;vertical-align:middle}
       <div id="page-actlog" class="page">
         <div class="page-hdr">
           <div class="page-hdr-row">
-            <div><div class="page-title">Activity Log</div><div class="page-sub">Full record of all changes — products, sales &amp; expenses</div></div>
+            <div>
+              <div class="page-title">Activity Log</div>
+              <div class="page-sub">All changes — inventory, sales &amp; expenses</div>
+            </div>
             <select class="sel" id="actWho" onchange="renderActLog()">
               <option value="">All Staff</option>
               <option value="Admin">Admin</option>
               <option value="Assistant">Assistant</option>
             </select>
           </div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
-            <button class="filter-btn active" id="alf-all" onclick="setActFilter('all')">All</button>
-            <button class="filter-btn" id="alf-products" onclick="setActFilter('products')">📦 Products</button>
-            <button class="filter-btn" id="alf-sales" onclick="setActFilter('sales')">💰 Sales</button>
-            <button class="filter-btn" id="alf-expenses" onclick="setActFilter('expenses')">💸 Expenses</button>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center">
+            <button class="al-tab active" id="alt-all"      onclick="setActFilter('all')">All</button>
+            <button class="al-tab"        id="alt-products" onclick="setActFilter('products')">📦 Inventory</button>
+            <button class="al-tab"        id="alt-sales"    onclick="setActFilter('sales')">💰 Sales</button>
+            <button class="al-tab"        id="alt-expenses" onclick="setActFilter('expenses')">💸 Expenses</button>
           </div>
         </div>
-        <div class="card">
-          <div id="actLogBody"></div>
+        <div class="card" style="padding:0;overflow:hidden">
+          <div id="actLogBody" style="min-height:120px"></div>
         </div>
       </div>
-      
 
       <!-- EXPENSES -->
       <div id="page-expenses" class="page">
@@ -1359,59 +1373,103 @@ function loadActLogs(){
 }
 function setActFilter(f){
   actFilter=f;
-  document.querySelectorAll('[id^="alf-"]').forEach(b=>b.classList.remove('active'));
-  const btn=document.getElementById('alf-'+f);
+  document.querySelectorAll('[id^="alt-"]').forEach(b=>b.classList.remove('active'));
+  const btn=document.getElementById('alt-'+f);
   if(btn) btn.classList.add('active');
   renderActLog();
 }
+function buildUnifiedLog(){
+  // 1. KGActivity entries (inventory changes: add/edit/restock/price_change/delete + expense CRUD)
+  const actEntries = actLogs.map(l=>({
+    _src:'activity',
+    _type: l.action_type,
+    _ts: l.timestamp_ph||l.created_date||l.timestamp||'',
+    name: l.product_name||'—',
+    detail: l.detail||'',
+    by: l.performed_by||'Unknown',
+    role: l.user_role||'admin',
+  }));
+  // 2. KGSale entries
+  const saleEntries = sales.map(s=>({
+    _src:'sale',
+    _type:'sale',
+    _ts: s.sale_date ? s.sale_date+'T00:00:00Z' : (s.created_date||''),
+    name: s.product_name||'—',
+    detail:`Qty: ${s.qty_sold} · ${peso(s.unit_price)} each · Total: ${peso(s.sale_total)}`,
+    by: s.recorded_by||'Admin',
+    role: s.recorded_by==='Admin'?'admin':'assistant',
+    _sale_id: s.sale_id,
+  }));
+  // 3. KGExpense entries
+  const expEntries = expenses.map(e=>({
+    _src:'expense',
+    _type:'expense',
+    _ts: e.expense_date ? e.expense_date+'T00:00:00Z' : (e.created_date||''),
+    name: e.description||'—',
+    detail:`${peso(e.amount)} · ${e.category||'Other'}${e.notes?' · '+e.notes:''}`,
+    by: e.recorded_by||'Admin',
+    role: e.recorded_by==='Admin'?'admin':'assistant',
+  }));
+  // Merge and sort newest first
+  const all=[...actEntries,...saleEntries,...expEntries];
+  all.sort((a,b)=>new Date(b._ts||0)-new Date(a._ts||0));
+  return all;
+}
 function renderActLog(){
-  if(!actLogs.length) loadActLogs();
   const who=document.getElementById('actWho')?.value||'';
   const productTypes=['add','edit','delete','restock','price_change'];
   const saleTypes=['sale'];
   const expenseTypes=['expense','delete_expense','edit_expense'];
-  let list=actLogs.filter(l=>{
-    if(who && l.performed_by!==who) return false;
-    if(actFilter==='products') return productTypes.includes(l.action_type);
-    if(actFilter==='sales') return saleTypes.includes(l.action_type);
-    if(actFilter==='expenses') return expenseTypes.includes(l.action_type);
+  let unified=buildUnifiedLog();
+  unified=unified.filter(l=>{
+    if(who && l.by!==who) return false;
+    if(actFilter==='products') return productTypes.includes(l._type);
+    if(actFilter==='sales') return saleTypes.includes(l._type);
+    if(actFilter==='expenses') return expenseTypes.includes(l._type);
     return true;
   });
-  const icons={sale:'💰',add:'➕',edit:'✏️',delete:'🗑️',expense:'💸',delete_expense:'🗑️',edit_expense:'✏️',restock:'📥',price_change:'🏷️',login:'🔑'};
-  const abClass={sale:'ab-sale',add:'ab-add',edit:'ab-edit',delete:'ab-delete',expense:'ab-expense',delete_expense:'ab-delete',edit_expense:'ab-edit',restock:'ab-add',price_change:'ab-edit',login:'ab-edit'};
-  const labels={sale:'Sale',add:'Product Added',edit:'Product Edited',delete:'Product Deleted',expense:'Expense',delete_expense:'Expense Deleted',edit_expense:'Expense Edited',restock:'Restocked',price_change:'Price Changed',login:'Login'};
-  if(!list.length){
-    document.getElementById('actLogBody').innerHTML=`<div class="empty"><div class="empty-icon">🕓</div><div class="fw7">No activity yet</div><div style="font-size:12px;color:var(--gray2);margin-top:4px">All sales, expenses, and inventory changes will appear here</div></div>`;
+  const el=document.getElementById('actLogBody');
+  if(!el) return;
+  if(!unified.length){
+    el.innerHTML=`<div class="empty" style="padding:40px"><div class="empty-icon">🕓</div><div class="fw7">No activity yet</div><div style="font-size:12px;color:var(--gray2);margin-top:4px">Sales, expenses, and inventory changes will appear here</div></div>`;
     return;
   }
+  const icons={sale:'💰',add:'➕',edit:'✏️',delete:'🗑️',expense:'💸',delete_expense:'🗑️',edit_expense:'✏️',restock:'📥',price_change:'🏷️'};
+  const iconBg={sale:'background:rgba(212,168,67,.15)',add:'background:rgba(16,185,129,.15)',edit:'background:rgba(59,130,246,.15)',delete:'background:rgba(239,68,68,.15)',expense:'background:rgba(239,68,68,.12)',delete_expense:'background:rgba(239,68,68,.15)',restock:'background:rgba(16,185,129,.15)',price_change:'background:rgba(245,158,11,.15)'};
+  const badgeStyle={sale:'background:rgba(212,168,67,.15);color:var(--gold)',add:'background:rgba(16,185,129,.15);color:var(--green)',edit:'background:rgba(59,130,246,.15);color:var(--blue)',delete:'background:rgba(239,68,68,.15);color:var(--red)',expense:'background:rgba(239,68,68,.12);color:var(--red)',delete_expense:'background:rgba(239,68,68,.15);color:var(--red)',restock:'background:rgba(16,185,129,.15);color:var(--green)',price_change:'background:rgba(245,158,11,.15);color:var(--yellow)'};
+  const labels={sale:'Sale',add:'Added',edit:'Edited',delete:'Deleted',expense:'Expense',delete_expense:'Exp. Deleted',edit_expense:'Exp. Edited',restock:'Restocked',price_change:'Price Change'};
   // Group by date
-  const groups={};
-  list.forEach(l=>{
-    const raw=l.timestamp_ph||l.created_date||l.timestamp||'';
-    const dt=raw?new Date(raw.includes('T')&&!raw.endsWith('Z')&&!raw.includes('+')?(raw+'Z'):raw):null;
-    const label=dt?phDate(dt):'Unknown Date';
-    if(!groups[label]) groups[label]=[];
-    groups[label].push(l);
+  const groups=[];
+  const groupMap={};
+  unified.forEach(l=>{
+    let raw=l._ts||'';
+    let dt=null;
+    try{ dt=raw?new Date(raw):null; }catch(e){}
+    const label=dt&&!isNaN(dt)?phDate(dt):'Unknown Date';
+    if(!groupMap[label]){groupMap[label]=[];groups.push({label,items:groupMap[label]});}
+    groupMap[label].push({...l, _dt:dt});
   });
   const todayLabel=phDate(new Date());
-  document.getElementById('actLogBody').innerHTML=Object.entries(groups).map(([date,items])=>`
-    <div style="padding:10px 16px 4px;font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.5px;text-transform:uppercase">${date===todayLabel?'Today — '+date:date}</div>
-    ${items.map(l=>{
-      const raw=l.timestamp_ph||l.created_date||l.timestamp||'';
-      const dt=raw?new Date(raw.includes('T')&&!raw.endsWith('Z')&&!raw.includes('+')?(raw+'Z'):raw):null;
-      const timeStr=dt?phTime(dt):'—';
-      return `<div class="activity-item">
-        <div class="activity-av ${l.user_role||'admin'}">${l.user_role==='admin'?'👑':'🧑‍💼'}</div>
-        <div class="activity-body">
-          <div class="activity-txt">${icons[l.action_type]||'•'} <strong>${l.product_name||'—'}</strong></div>
-          <div class="activity-meta">
-            <strong>${l.performed_by||'Unknown'}</strong> · ${timeStr}<br/>
-            <span style="color:var(--gray2);font-size:11px">${l.detail||''}</span>
-          </div>
+  el.innerHTML=groups.map(g=>{
+    const hdr=g.label===todayLabel?`Today · ${g.label}`:g.label;
+    return `<div class="al-date-hdr">${hdr}</div>`+g.items.map(l=>{
+      const timeStr=l._dt&&!isNaN(l._dt)?phTime(l._dt):'—';
+      const ic=icons[l._type]||'•';
+      const bg=iconBg[l._type]||'background:var(--navy3)';
+      const bst=badgeStyle[l._type]||'background:var(--navy3);color:var(--gray)';
+      const lbl=labels[l._type]||l._type;
+      const roleIcon=l.role==='admin'?'👑':'🧑‍💼';
+      return `<div class="al-row">
+        <div class="al-icon" style="${bg}">${ic}</div>
+        <div class="al-body">
+          <div class="al-name">${l.name}</div>
+          <div class="al-detail">${l.detail}</div>
+          <div class="al-meta">${roleIcon} ${l.by} · ${timeStr}</div>
         </div>
-        <span class="activity-badge ${abClass[l.action_type]||'ab-edit'}">${labels[l.action_type]||l.action_type}</span>
+        <span class="al-badge" style="${bst}">${lbl}</span>
       </div>`;
-    }).join('')}`).join('');
+    }).join('');
+  }).join('');
 }
 
 // ═══════════════════ SALE ═══════════════════
