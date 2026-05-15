@@ -494,9 +494,6 @@ tbody td{padding:13px 16px;vertical-align:middle}
           </div>
           <select class="sel" id="invCat" onchange="renderInv()">
             <option value="">All Categories</option>
-            <option>Tires</option><option>Engine Oil</option><option>Brake Pads</option><option>Brake Oil</option>
-            <option>Filters</option><option>Batteries</option><option>Wipers</option><option>Lights</option>
-            <option>Belts & Hoses</option><option>Accessories</option>
           </select>
           <select class="sel" id="invStat" onchange="renderInv()">
             <option value="">All Status</option>
@@ -1058,6 +1055,7 @@ async function loadAll(){
     renderDash();
     renderExpenses();
     render();
+    populateCatDropdown();
     // Pre-render actlog so spinner is removed even if not navigated yet
     if(curPage!=='actlog') {
       const body=document.getElementById('actLogBody');
@@ -1282,6 +1280,20 @@ function renderDash(){
 }
 
 // ═══════════════════ INVENTORY ═══════════════════
+function populateCatDropdown(){
+  const sel = document.getElementById('invCat');
+  const current = sel.value;
+  // Count products per category
+  const counts = {};
+  products.forEach(p => {
+    const c = p.category || 'Uncategorized';
+    counts[c] = (counts[c] || 0) + 1;
+  });
+  const cats = Object.keys(counts).sort();
+  const total = products.length;
+  sel.innerHTML = `<option value="">All Categories (${total})</option>` +
+    cats.map(c => `<option value="${c}" ${current===c?'selected':''}>${c} (${counts[c]})</option>`).join('');
+}
 function renderInv(){
   const q=document.getElementById('invQ').value.toLowerCase();
   const cat=document.getElementById('invCat').value;
