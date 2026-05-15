@@ -1283,16 +1283,20 @@ function renderDash(){
 function populateCatDropdown(){
   const sel = document.getElementById('invCat');
   const current = sel.value;
+  // All fixed categories (always show all)
+  const ALL_CATS = ['Tires','Engine Oil','Brake Pads','Brake Oil','Filters','Batteries','Wipers','Lights','Belts & Hoses','Accessories'];
   // Count products per category
   const counts = {};
   products.forEach(p => {
     const c = p.category || 'Uncategorized';
     counts[c] = (counts[c] || 0) + 1;
   });
-  const cats = Object.keys(counts).sort();
+  // Merge: fixed list + any extra categories from DB not in the fixed list
+  const extra = Object.keys(counts).filter(c => !ALL_CATS.includes(c)).sort();
+  const cats = [...ALL_CATS, ...extra];
   const total = products.length;
   sel.innerHTML = `<option value="">All Categories (${total})</option>` +
-    cats.map(c => `<option value="${c}" ${current===c?'selected':''}>${c} (${counts[c]})</option>`).join('');
+    cats.map(c => `<option value="${c}" ${current===c?'selected':''}>${c} (${counts[c]||0})</option>`).join('');
 }
 function renderInv(){
   const q=document.getElementById('invQ').value.toLowerCase();
