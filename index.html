@@ -395,6 +395,22 @@ tbody td{padding:13px 16px;vertical-align:middle}
   /* Record Sale button in topbar: hide text, show + icon only */
   .tb-sale-text{display:none}
 }
+/* ── INVENTORY SUMMARY BAR ── */
+.inv-summary-bar{display:flex;align-items:center;gap:0;background:var(--navy2);border:1px solid var(--navy3);border-radius:var(--r);margin-top:10px;padding:14px 20px;flex-wrap:wrap;gap:8px}
+.inv-sum-item{display:flex;flex-direction:column;gap:3px;flex:1;min-width:140px}
+.inv-sum-label{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gray)}
+.inv-sum-val{font-size:16px;font-weight:800;letter-spacing:-.3px}
+.inv-sum-divider{width:1px;height:40px;background:var(--navy3);flex-shrink:0;align-self:center}
+@media(max-width:900px){
+  .inv-summary-bar{gap:12px;padding:12px 16px}
+  .inv-sum-divider{display:none}
+  .inv-sum-item{min-width:calc(50% - 12px);flex:0 0 calc(50% - 12px)}
+}
+@media(max-width:480px){
+  .inv-sum-item{min-width:100%;flex:0 0 100%}
+  .inv-sum-val{font-size:15px}
+}
+
 /* ── VERY SMALL PHONES (≤360px) ── */
 @media(max-width:360px){
   .kpi-grid{grid-template-columns:1fr}
@@ -568,6 +584,10 @@ tbody td{padding:13px 16px;vertical-align:middle}
             <thead><tr><th>Product</th><th class="tbl-col-hide">Category</th><th>SRP / Mark Up</th><th>Stock</th><th class="tbl-col-hide">Value</th><th>Status</th><th>Actions</th></tr></thead>
             <tbody id="invBody"><tr><td colspan="7"><div class="loader"><div class="spin"></div>Loading…</div></td></tr></tbody>
           </table>
+        </div>
+        <!-- INVENTORY SUMMARY BAR -->
+        <div id="invSummaryBar" class="inv-summary-bar">
+          <div class="inv-sum-item"><span class="inv-sum-label">📦 Filtered SKUs</span><span class="inv-sum-val" style="color:var(--gold)">—</span></div>
         </div>
         <div id="invFooter" class="mt16" style="text-align:right;font-size:13px;color:var(--gray)"></div>
       </div>
@@ -1393,6 +1413,34 @@ function renderInv(){
     return mQ&&(!cat||p.category===cat)&&(!stat||st(p)===stat);
   });
   const totVal=list.reduce((s,p)=>s+(p.unit_price||0)*(p.stock_qty||0),0);
+  const totMarkupVal=list.reduce((s,p)=>s+(p.markup_price&&p.markup_price>0?(p.markup_price||0)*(p.stock_qty||0):(p.unit_price||0)*(p.stock_qty||0)),0);
+  const totMarkupGainInv=totMarkupVal-totVal;
+  const totMarkupPctInv=totVal>0?((totMarkupGainInv/totVal)*100).toFixed(1):0;
+
+  // Update inventory summary bar
+  const summaryBar=document.getElementById('invSummaryBar');
+  if(summaryBar){
+    summaryBar.innerHTML=`
+      <div class="inv-sum-item">
+        <span class="inv-sum-label">📦 Filtered SKUs</span>
+        <span class="inv-sum-val" style="color:var(--gold)">${list.length}</span>
+      </div>
+      <div class="inv-sum-divider"></div>
+      <div class="inv-sum-item">
+        <span class="inv-sum-label">🏷️ Total SRP Value</span>
+        <span class="inv-sum-val" style="color:var(--gold)">${peso(totVal)}</span>
+      </div>
+      <div class="inv-sum-divider"></div>
+      <div class="inv-sum-item">
+        <span class="inv-sum-label">💹 Total Mark Up Value</span>
+        <span class="inv-sum-val" style="color:var(--green)">${peso(totMarkupVal)}</span>
+      </div>
+      <div class="inv-sum-divider"></div>
+      <div class="inv-sum-item">
+        <span class="inv-sum-label">📈 Overall Margin</span>
+        <span class="inv-sum-val" style="color:var(--green)">+${peso(totMarkupGainInv)} &nbsp;<span style="opacity:.7;font-size:12px">(${totMarkupPctInv}%)</span></span>
+      </div>`;
+  }
   document.getElementById('invBody').innerHTML=list.map(p=>`
     <tr>
       <td><div class="fw7">${p.product_name}</div><div class="fs11 text-gray">${p.product_id||''} · ${p.brand||''}</div>${p.sku?`<div class="fs11" style="color:var(--gold);opacity:.7">SKU: ${p.sku}</div>`:''}</td>
