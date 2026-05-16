@@ -1466,28 +1466,6 @@ function renderInv(){
         <button class="btn btn-xs" style="background:var(--red2);color:var(--red);border:1px solid rgba(239,68,68,.3)" onclick="confirmDelete(this.getAttribute('data-pid'),this.getAttribute('data-pname'))" data-pid="${p.id}" data-pname="${p.product_name}">🗑️</button>
       </div></td>
     </tr>`).join('')||`<tr><td colspan="8"><div class="empty"><div class="empty-icon">📦</div><div>No products found</div></div></td></tr>`;
-  // Inject totals footer row into the table
-  const totalsRow = list.length ? `
-    <tr class="inv-totals-row">
-      <td colspan="2" style="padding:12px 14px;border-top:1px solid var(--navy4)">
-        <span style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gray)">${list.length} Product${list.length!==1?'s':''}</span>
-      </td>
-      <td class="tbl-col-hide" style="border-top:1px solid var(--navy4)"></td>
-      <td style="border-top:1px solid var(--navy4)"></td>
-      <td class="tbl-col-hide" style="padding:12px 14px;border-top:1px solid var(--navy4)">
-        <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gray);margin-bottom:4px">Overall SRP</div>
-        <div class="num fw7" style="color:var(--gold);font-size:15px">${peso(totVal)}</div>
-      </td>
-      <td class="tbl-col-hide" style="padding:12px 14px;border-top:1px solid var(--navy4)">
-        <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gray);margin-bottom:4px">Overall Markup</div>
-        <div class="num fw7" style="color:var(--green);font-size:15px">${peso(totMarkupVal)}</div>
-        <div style="font-size:11px;color:var(--green);margin-top:2px">+${peso(totMarkupGainInv)} <span style="color:var(--gray)">(${totMarkupPctInv}%)</span></div>
-      </td>
-      <td style="border-top:1px solid var(--navy4)"></td>
-      <td style="border-top:1px solid var(--navy4)"></td>
-    </tr>` : '';
-
-  document.getElementById('invBody').innerHTML += totalsRow;
   document.getElementById('invFooter').innerHTML='';
 }
 
