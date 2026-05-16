@@ -1019,7 +1019,7 @@ function doLogin() {
     document.getElementById('pinInput').focus();
   }
 }
-function launchApp() {
+async function launchApp() {
   document.getElementById('loginWrap').style.display='none';
   document.getElementById('appWrap').classList.add('visible');
   document.getElementById('mobNav') && document.getElementById('mobNav').classList.add('show');
@@ -1033,7 +1033,7 @@ function launchApp() {
   if(cpBtn) cpBtn.style.display=curUser.role==='admin'?'block':'none';
   clock(); setInterval(clock,30000);
   document.getElementById('saleDate').value = today();
-  loadAll();
+  await loadAll();
 }
 function logout() {
   curUser=null; localStorage.removeItem('kgcar_user');
@@ -1160,7 +1160,12 @@ async function loadAll(){
       const body=document.getElementById('actLogBody');
       if(body&&body.innerHTML.includes('Loading')) renderActLog();
     }
-  } catch(e){toast('Failed to load: '+e.message,'err');}
+  } catch(e){
+    toast('⚠️ Failed to load data — retrying...','err');
+    console.error('loadAll error:',e);
+    // Auto-retry once after 2s
+    setTimeout(()=>loadAll(),2000);
+  }
 }
 
 // ═══════════════════ NAVIGATION ═══════════════════
