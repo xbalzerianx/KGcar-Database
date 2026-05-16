@@ -583,8 +583,8 @@ tbody td{padding:13px 16px;vertical-align:middle}
         </div>
         <div class="tbl-wrap">
           <table>
-            <thead><tr><th>Product</th><th class="tbl-col-hide">Category</th><th>SRP / Mark Up</th><th>Stock</th><th class="tbl-col-hide">Value</th><th>Status</th><th>Actions</th></tr></thead>
-            <tbody id="invBody"><tr><td colspan="7"><div class="loader"><div class="spin"></div>Loading…</div></td></tr></tbody>
+            <thead><tr><th>Product</th><th class="tbl-col-hide">Category</th><th>SRP / Mark Up</th><th>Stock</th><th class="tbl-col-hide">SRP Value</th><th class="tbl-col-hide">Markup Value</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="invBody"><tr><td colspan="8"><div class="loader"><div class="spin"></div>Loading…</div></td></tr></tbody>
           </table>
         </div>
         <!-- INVENTORY SUMMARY BAR -->
@@ -1457,14 +1457,15 @@ function renderInv(){
         ${p.markup_price?`<div style="font-size:11px;color:var(--green);margin-top:2px">MU: ${peso(p.markup_price)} <span style="color:var(--gray)">(+${(((p.markup_price-p.unit_price)/p.unit_price)*100).toFixed(1)}%)</span></div>`:''}
       </td>
       <td><span class="fw7 ${qtyColor(p)}">${num(p.stock_qty)}</span><span class="fs11 text-gray"> ${p.unit||'pcs'}</span></td>
-      <td class="num fw7 tbl-col-hide">${peso((p.unit_price||0)*(p.stock_qty||0))}</td>
+      <td class="num fw7 tbl-col-hide" style="color:var(--gold)">${peso((p.unit_price||0)*(p.stock_qty||0))}</td>
+      <td class="num fw7 tbl-col-hide" style="color:var(--green)">${p.markup_price&&p.markup_price>0?peso((p.markup_price||0)*(p.stock_qty||0)):'—'}</td>
       <td>${badgeEl(p)}</td>
       <td><div class="flex gap8">
         <button class="btn btn-ghost btn-xs" onclick="openEdit('${p.id}')">✏️ Edit</button>
         <button class="btn btn-gold btn-xs" onclick="quickSell('${p.id}')">💰 Sell</button>
         <button class="btn btn-xs" style="background:var(--red2);color:var(--red);border:1px solid rgba(239,68,68,.3)" onclick="confirmDelete(this.getAttribute('data-pid'),this.getAttribute('data-pname'))" data-pid="${p.id}" data-pname="${p.product_name}">🗑️</button>
       </div></td>
-    </tr>`).join('')||`<tr><td colspan="7"><div class="empty"><div class="empty-icon">📦</div><div>No products found</div></div></td></tr>`;
+    </tr>`).join('')||`<tr><td colspan="8"><div class="empty"><div class="empty-icon">📦</div><div>No products found</div></div></td></tr>`;
   // Inject totals footer row into the table
   const totalsRow = list.length ? `
     <tr class="inv-totals-row">
@@ -1472,15 +1473,17 @@ function renderInv(){
         <span style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gray)">${list.length} Product${list.length!==1?'s':''}</span>
       </td>
       <td class="tbl-col-hide" style="border-top:1px solid var(--navy4)"></td>
-      <td style="padding:12px 14px;border-top:1px solid var(--navy4)">
-        <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gray);margin-bottom:4px">Overall SRP</div>
+      <td style="border-top:1px solid var(--navy4)"></td>
+      <td class="tbl-col-hide" style="padding:12px 14px;border-top:1px solid var(--navy4)">
+        <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gray);margin-bottom:4px">Overall SRP</div>
         <div class="num fw7" style="color:var(--gold);font-size:15px">${peso(totVal)}</div>
-        <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gray);margin-top:8px;margin-bottom:4px">Overall Markup</div>
-        <div class="num fw7" style="color:var(--green);font-size:15px">${peso(totMarkupVal)}</div>
-        <div style="font-size:11px;color:var(--green);margin-top:2px">+${peso(totMarkupGainInv)} &nbsp;<span style="color:var(--gray)">(${totMarkupPctInv}%)</span></div>
       </td>
-      <td class="tbl-col-hide" style="border-top:1px solid var(--navy4)"></td>
-      <td class="tbl-col-hide" style="border-top:1px solid var(--navy4)"></td>
+      <td class="tbl-col-hide" style="padding:12px 14px;border-top:1px solid var(--navy4)">
+        <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gray);margin-bottom:4px">Overall Markup</div>
+        <div class="num fw7" style="color:var(--green);font-size:15px">${peso(totMarkupVal)}</div>
+        <div style="font-size:11px;color:var(--green);margin-top:2px">+${peso(totMarkupGainInv)} <span style="color:var(--gray)">(${totMarkupPctInv}%)</span></div>
+      </td>
+      <td style="border-top:1px solid var(--navy4)"></td>
       <td style="border-top:1px solid var(--navy4)"></td>
     </tr>` : '';
 
