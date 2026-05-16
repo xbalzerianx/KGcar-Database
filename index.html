@@ -124,18 +124,19 @@ button,input,select,textarea{font-family:inherit}
 .date-inp::-webkit-calendar-picker-indicator{filter:invert(.5)}
 
 /* KPI */
-.kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
 .kpi{background:var(--navy2);border:1px solid var(--navy3);border-radius:var(--r);padding:16px 18px;position:relative;overflow:hidden;transition:transform .15s,border-color .15s}
 .kpi:hover{transform:translateY(-2px);border-color:var(--navy4)}
 .kpi-glow{position:absolute;top:-30px;right:-30px;width:100px;height:100px;border-radius:50%;opacity:.06;filter:blur(20px)}
-.kpi-glow.gold{background:var(--gold)}.kpi-glow.green{background:var(--green)}.kpi-glow.blue{background:#3b82f6}.kpi-glow.purple{background:#a855f7}
+.kpi-glow.gold{background:var(--gold)}.kpi-glow.green{background:var(--green)}.kpi-glow.blue{background:#3b82f6}.kpi-glow.purple{background:#a855f7}.kpi-glow.teal{background:#2dd4bf}
 .kpi-glow.yellow{background:var(--yellow)}.kpi-glow.red{background:var(--red)}.kpi-glow.blue{background:var(--blue)}
 .kpi-icon{font-size:22px;margin-bottom:8px}
 .kpi-label{font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--gray);margin-bottom:8px}
 .kpi-val{font-size:22px;font-weight:800;letter-spacing:-0.5px;line-height:1}
 .kpi-val.gold{color:var(--gold)}.kpi-val.green{color:var(--green)}
 .kpi-val.blue{color:#60a5fa}
-.kpi-val.purple{color:#c084fc}.kpi-val.yellow{color:var(--yellow)}.kpi-val.red{color:var(--red)}.kpi-val.blue{color:var(--blue)}
+.kpi-val.purple{color:#c084fc}
+.kpi-val.teal{color:#2dd4bf}.kpi-val.yellow{color:var(--yellow)}.kpi-val.red{color:var(--red)}.kpi-val.blue{color:var(--blue)}
 .kpi-sub{font-size:12px;color:var(--gray);margin-top:8px}
 .kpi-trend{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;margin-top:6px;padding:3px 8px;border-radius:6px}
 .kpi-trend.up{background:var(--green2);color:var(--green)}.kpi-trend.warn{background:var(--yellow2);color:var(--yellow)}
@@ -280,7 +281,7 @@ tbody td{padding:13px 16px;vertical-align:middle}
 /* ── DESKTOP COMPACT ── */
 @media(min-width:901px){
   .main{padding:20px 24px}
-  .kpi-grid{grid-template-columns:repeat(3,1fr);gap:16px}
+  .kpi-grid{grid-template-columns:repeat(5,1fr);gap:14px}
   .toolbar .search{max-width:340px}
   .modal{max-width:560px}
   .kpi-grid{gap:14px}
@@ -1279,13 +1280,10 @@ function renderDash(){
 
   document.getElementById('kpiGrid').innerHTML=`
     <div class="kpi"><div class="kpi-glow gold"></div><div class="kpi-icon">📦</div>
-      <div class="kpi-label">Inventory Value</div><div class="kpi-val gold num">${peso(totVal)}</div>
-      <div class="kpi-sub">${products.length} SKUs tracked</div></div>
-    <div class="kpi"><div class="kpi-glow blue"></div><div class="kpi-icon">🏷️</div>
-      <div class="kpi-label">Total SRP Value</div><div class="kpi-val blue num">${peso(totSRP)}</div>
-      <div class="kpi-sub">Supplier cost · all stock</div></div>
-    <div class="kpi"><div class="kpi-glow purple"></div><div class="kpi-icon">💹</div>
-      <div class="kpi-label">Total Mark Up Value</div><div class="kpi-val purple num">${peso(totMarkup)}</div>
+      <div class="kpi-label">Inventory · SRP Value</div><div class="kpi-val gold num">${peso(totSRP)}</div>
+      <div class="kpi-sub">${products.length} SKUs · Supplier cost basis</div></div>
+    <div class="kpi"><div class="kpi-glow teal"></div><div class="kpi-icon">💹</div>
+      <div class="kpi-label">Total Mark Up Value</div><div class="kpi-val teal num">${peso(totMarkup)}</div>
       <div class="kpi-sub"><span style="color:var(--green)">+${peso(totMarkupGain)}</span> &nbsp;|&nbsp; <span style="color:var(--green)">${totMarkupPct}% margin</span></div></div>
     <div class="kpi"><div class="kpi-glow green"></div><div class="kpi-icon">💰</div>
       <div class="kpi-label">Revenue · ${lbl}</div><div class="kpi-val green num">${peso(periodRev)}</div>
