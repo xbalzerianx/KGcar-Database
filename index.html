@@ -1387,7 +1387,7 @@ function renderInv(){
       <td><div class="fw7">${p.product_name}</div><div class="fs11 text-gray">${p.product_id||''} · ${p.brand||''}</div>${p.sku?`<div class="fs11" style="color:var(--gold);opacity:.7">SKU: ${p.sku}</div>`:''}</td>
       <td class="tbl-col-hide"><span class="badge b-cat">${p.category}</span></td>
       <td class="num text-gold fw7">
-        <div>${peso(p.unit_price)}<span class="fs11 text-gray">/${p.unit||'pcs'}</span></div>
+        <div>${peso(p.unit_price)}</div>
         ${p.markup_price?`<div style="font-size:11px;color:var(--green);margin-top:2px">MU: ${peso(p.markup_price)} <span style="color:var(--gray)">(+${(((p.markup_price-p.unit_price)/p.unit_price)*100).toFixed(1)}%)</span></div>`:''}
       </td>
       <td><span class="fw7 ${qtyColor(p)}">${num(p.stock_qty)}</span><span class="fs11 text-gray"> ${p.unit||'pcs'}</span></td>
