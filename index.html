@@ -194,20 +194,29 @@ tbody td{padding:13px 16px;vertical-align:middle}
 .search:focus-within{border-color:var(--gold)}
 .search input{background:none;border:none;outline:none;color:var(--white);font-size:13px;width:100%}
 .search input::placeholder{color:var(--gray)}
-.sel{background:var(--navy2);border:1px solid var(--navy3);border-radius:var(--r2);padding:9px 14px;color:var(--white);font-size:13px;cursor:pointer;outline:none}
+.sel{background:var(--navy2);border:1px solid var(--navy3);border-radius:var(--r2);padding:9px 14px;color:var(--white);font-size:13px;cursor:pointer;outline:none;min-width:0;box-sizing:border-box}
 .sel option{background:var(--navy2)}
 
 /* MODAL */
-.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:900;align-items:flex-start;justify-content:center;overflow-y:auto;padding:16px;backdrop-filter:blur(4px)}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:900;align-items:flex-start;justify-content:center;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px;backdrop-filter:blur(4px)}
 .overlay.open{display:flex;align-items:flex-start}
-.modal{background:var(--navy2);border:1px solid var(--navy3);border-radius:var(--r);padding:24px;width:100%;max-width:540px;margin:auto;box-shadow:0 30px 80px rgba(0,0,0,.6);animation:mIn .2s ease}
+.modal{background:var(--navy2);border:1px solid var(--navy3);border-radius:var(--r);padding:24px;width:100%;max-width:540px;margin:auto;box-shadow:0 30px 80px rgba(0,0,0,.6);animation:mIn .2s ease;box-sizing:border-box}
 @keyframes mIn{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
 .modal-title{font-size:18px;font-weight:800;color:var(--gold);margin-bottom:22px}
-.modal-foot{display:flex;gap:10px;justify-content:flex-end;margin-top:24px;padding-top:20px;border-top:1px solid var(--navy3)}
+.modal-foot{display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end;margin-top:24px;padding-top:20px;border-top:1px solid var(--navy3)}
 
 /* FORMS */
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.fg{display:flex;flex-direction:column;gap:7px}.fg.full{grid-column:1/-1}
+.fg{display:flex;flex-direction:column;gap:7px}
+.fg.full{grid-column:1 / -1}
+.inp{width:100%;background:var(--navy3);border:1px solid var(--navy4);border-radius:var(--r2);padding:10px 14px;color:var(--white);font-size:13px;outline:none;box-sizing:border-box;transition:border-color .15s}
+.inp:focus{border-color:var(--gold)}
+.sel2{width:100%;background:var(--navy3);border:1px solid var(--navy4);border-radius:var(--r2);padding:10px 14px;color:var(--white);font-size:13px;outline:none;box-sizing:border-box;cursor:pointer}
+.sel2:focus{border-color:var(--gold)}
+.ta{width:100%;background:var(--navy3);border:1px solid var(--navy4);border-radius:var(--r2);padding:10px 14px;color:var(--white);font-size:13px;outline:none;box-sizing:border-box;resize:vertical;min-height:72px;transition:border-color .15s}
+.ta:focus{border-color:var(--gold)}
+.label{font-size:12px;font-weight:600;color:var(--gray);text-transform:uppercase;letter-spacing:.4px}
+.inp-hint{font-size:11px;color:var(--gray2);margin-top:3px}.fg.full{grid-column:1/-1}
 .label{font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--gray)}
 .inp,.sel2,.ta{background:var(--navy3);border:1px solid var(--navy4);border-radius:var(--r2);padding:10px 14px;color:var(--white);font-size:13px;outline:none;transition:border-color .15s;width:100%}
 .inp:focus,.sel2:focus,.ta:focus{border-color:var(--gold)}
@@ -219,7 +228,7 @@ tbody td{padding:13px 16px;vertical-align:middle}
 
 /* SALE SEARCH */
 .prod-results{background:var(--navy3);border:1px solid var(--navy4);border-radius:var(--r2);max-height:240px;overflow-y:auto;margin-top:6px;z-index:100}
-.prod-item{padding:11px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--navy4);transition:background .1s}
+.prod-item{padding:14px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--navy4);transition:background .1s;min-height:48px}
 .prod-item:last-child{border-bottom:none}.prod-item:hover{background:var(--gold3)}
 .prod-item-name{font-size:13px;font-weight:600}
 .prod-item-sub{font-size:11px;color:var(--gray);margin-top:2px}
@@ -269,6 +278,8 @@ tbody td{padding:13px 16px;vertical-align:middle}
 /* ── DESKTOP COMPACT ── */
 @media(min-width:901px){
   .main{padding:20px 24px}
+  .toolbar .search{max-width:340px}
+  .modal{max-width:560px}
   .kpi-grid{gap:14px}
   .kpi{padding:18px 20px}
   .kpi-icon{font-size:22px;margin-bottom:8px}
@@ -283,10 +294,10 @@ tbody td{padding:13px 16px;vertical-align:middle}
 }
 
 /* ── TABLET / MOBILE ── */
+/* ── TABLET (≤900px) ── */
 @media(max-width:900px){
   .sidebar{display:none!important}
   .mob-nav.show{display:block}
-@media(min-width:901px){.mob-nav{display:none!important}}
   .desktop-only{display:none}
   .main{padding:14px 12px 80px}
   .topbar{padding:0 14px;height:54px;min-height:54px}
@@ -308,17 +319,35 @@ tbody td{padding:13px 16px;vertical-align:middle}
   .card{padding:14px}
   .card-hdr{margin-bottom:12px}
   .card-title{font-size:13px}
-  /* dashboard bottom 2-col on tablet */
   .dash-bottom-grid{grid-template-columns:1fr !important}
+  /* toolbar: stack search full-width, selects wrap */
+  .toolbar{flex-wrap:wrap;gap:8px}
+  .toolbar .search{max-width:100%;flex:1 1 100%}
+  .toolbar .sel{flex:1;min-width:130px}
+  /* modal full-screen on tablet */
+  .overlay{padding:0;align-items:flex-end}
+  .modal{border-radius:20px 20px 0 0;max-width:100%;max-height:92dvh;overflow-y:auto;padding:20px 18px 30px}
+  /* bigger touch targets */
+  .btn{min-height:42px}
+  .mob-item{padding:6px 2px}
+  /* page header row stacks */
+  .page-hdr-row{flex-direction:column;gap:10px}
+  .page-hdr-row .btn{width:100%;justify-content:center}
 }
+@media(min-width:901px){.mob-nav{display:none!important}}
 
-/* ── SMALL MOBILE ── */
+/* ── SMALL MOBILE (≤480px) ── */
 .desktop-date{display:inline}.mobile-date{display:none}
 @media(max-width:480px){
-  .login-box{padding:24px 16px}.login-users{gap:8px}.user-card{padding:12px}.pin-pad{gap:8px}.pin-btn{height:52px;font-size:18px}
+  .login-box{padding:24px 16px}
+  .login-users{gap:8px}
+  .user-card{padding:12px}
+  .pin-pad{gap:8px}
+  .pin-btn{height:52px;font-size:18px}
   .main{padding:12px 10px 76px}
   .topbar{padding:0 12px;height:50px;min-height:50px}
   .tb-title{font-size:15px}
+  .tb-right{gap:6px}
   .page-title{font-size:18px}
   .page-sub{font-size:12px}
   .kpi-grid{grid-template-columns:1fr 1fr;gap:8px}
@@ -328,18 +357,48 @@ tbody td{padding:13px 16px;vertical-align:middle}
   .kpi-label{font-size:9px;letter-spacing:1px;margin-bottom:3px}
   .kpi-sub{font-size:10px;margin-top:3px}
   .card{padding:12px}
-  .filter-bar{padding:8px 10px}
+  .filter-bar{padding:8px 10px;gap:6px}
   .filter-btn{padding:5px 8px;font-size:11px}
-  /* hide less important table columns */
+  /* hide less important table columns on small phones */
   .tbl-col-hide{display:none}
   .desktop-date{display:none}
   .mobile-date{display:inline}
-  /* toast bottom offset for mobile nav */
+  /* toasts above mobile nav */
   .toasts{bottom:80px;right:12px;left:12px}
   .toast{max-width:100%}
   /* net profit banner compact */
   .profit-banner{flex-direction:column;align-items:flex-start;gap:10px;padding:12px 14px !important}
   .profit-banner-right{text-align:left !important}
+  /* full-width selects in toolbar */
+  .toolbar .sel{width:100%;flex:1 1 100%}
+  /* product table: compact on small phones */
+  table{font-size:12px}
+  thead th{padding:8px 10px}
+  td{padding:8px 10px}
+  /* modal fills screen */
+  .overlay{padding:0;align-items:flex-end}
+  .modal{border-radius:20px 20px 0 0;max-width:100%;max-height:95dvh;overflow-y:auto;padding:18px 14px 28px}
+  .modal-title{font-size:16px;margin-bottom:16px}
+  /* bigger tap targets for buttons */
+  .btn{min-height:44px;font-size:13px}
+  .btn-xs{min-height:36px;font-size:12px}
+  /* form inputs easier to tap */
+  .inp,.sel,.sel2,.ta{font-size:16px !important} /* prevents iOS zoom */
+  .inp,.sel2{padding:12px 14px}
+  .label{font-size:12px}
+  /* markup summary card full width */
+  #markupPctRow{grid-column:1 / -1}
+  /* Record Sale button in topbar: hide text, show + icon only */
+  .tb-sale-text{display:none}
+}
+/* ── VERY SMALL PHONES (≤360px) ── */
+@media(max-width:360px){
+  .kpi-grid{grid-template-columns:1fr}
+  .kpi-val{font-size:15px}
+  .mob-item-icon{font-size:17px}
+  .mob-item{font-size:8px}
+  .page-title{font-size:16px}
+  .btn{font-size:12px;padding:8px 10px}
 }
 </style>
 </head>
@@ -442,7 +501,7 @@ tbody td{padding:13px 16px;vertical-align:middle}
       <div class="tb-right">
         <div class="tb-live"><div class="tb-dot"></div>Live</div>
         <div id="tbDate" style="font-size:12px;color:var(--gray);background:var(--navy3);padding:6px 12px;border-radius:8px"></div>
-        <button class="btn btn-gold btn-sm" onclick="go('sale')">+ Record Sale</button>
+        <button class="btn btn-gold btn-sm" onclick="go('sale')">+ <span class="tb-sale-text">Record Sale</span></button>
       </div>
     </div>
 
@@ -502,7 +561,7 @@ tbody td{padding:13px 16px;vertical-align:middle}
         </div>
         <div class="tbl-wrap">
           <table>
-            <thead><tr><th>Product</th><th>Category</th><th>SRP / Mark Up</th><th>Stock</th><th>Value</th><th>Status</th><th>Actions</th></tr></thead>
+            <thead><tr><th>Product</th><th class="tbl-col-hide">Category</th><th>SRP / Mark Up</th><th>Stock</th><th class="tbl-col-hide">Value</th><th>Status</th><th>Actions</th></tr></thead>
             <tbody id="invBody"><tr><td colspan="7"><div class="loader"><div class="spin"></div>Loading…</div></td></tr></tbody>
           </table>
         </div>
@@ -969,6 +1028,12 @@ window.addEventListener('DOMContentLoaded', () => {
 
 // ═══════════════════ UTILS ═══════════════════
 function peso(n){return '₱'+Number(n||0).toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function pesoCompact(n){
+  const v=Number(n||0);
+  if(v>=1000000) return '₱'+(v/1000000).toFixed(2)+'M';
+  if(v>=1000) return '₱'+(v/1000).toFixed(1)+'K';
+  return peso(v);
+}
 function num(n){return Number(n||0).toLocaleString('en-PH');}
 function today(){
   // Always return today's date in Philippine Time (UTC+8)
@@ -1320,13 +1385,13 @@ function renderInv(){
   document.getElementById('invBody').innerHTML=list.map(p=>`
     <tr>
       <td><div class="fw7">${p.product_name}</div><div class="fs11 text-gray">${p.product_id||''} · ${p.brand||''}</div>${p.sku?`<div class="fs11" style="color:var(--gold);opacity:.7">SKU: ${p.sku}</div>`:''}</td>
-      <td><span class="badge b-cat">${p.category}</span></td>
+      <td class="tbl-col-hide"><span class="badge b-cat">${p.category}</span></td>
       <td class="num text-gold fw7">
         <div>${peso(p.unit_price)}<span class="fs11 text-gray">/${p.unit||'pcs'}</span></div>
         ${p.markup_price?`<div style="font-size:11px;color:var(--green);margin-top:2px">MU: ${peso(p.markup_price)} <span style="color:var(--gray)">(+${(((p.markup_price-p.unit_price)/p.unit_price)*100).toFixed(1)}%)</span></div>`:''}
       </td>
       <td><span class="fw7 ${qtyColor(p)}">${num(p.stock_qty)}</span><span class="fs11 text-gray"> ${p.unit||'pcs'}</span></td>
-      <td class="num fw7">${peso((p.unit_price||0)*(p.stock_qty||0))}</td>
+      <td class="num fw7 tbl-col-hide">${peso((p.unit_price||0)*(p.stock_qty||0))}</td>
       <td>${badgeEl(p)}</td>
       <td><div class="flex gap8">
         <button class="btn btn-ghost btn-xs" onclick="openEdit('${p.id}')">✏️ Edit</button>
