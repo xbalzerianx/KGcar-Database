@@ -502,7 +502,7 @@ tbody td{padding:13px 16px;vertical-align:middle}
         </div>
         <div class="tbl-wrap">
           <table>
-            <thead><tr><th>Product</th><th>Category</th><th>Unit Price</th><th>Stock</th><th>Value</th><th>Status</th><th>Actions</th></tr></thead>
+            <thead><tr><th>Product</th><th>Category</th><th>SRP / Mark Up</th><th>Stock</th><th>Value</th><th>Status</th><th>Actions</th></tr></thead>
             <tbody id="invBody"><tr><td colspan="7"><div class="loader"><div class="spin"></div>Loading…</div></td></tr></tbody>
           </table>
         </div>
@@ -736,7 +736,17 @@ tbody td{padding:13px 16px;vertical-align:middle}
         <input class="inp" id="mTireSize" placeholder="Or type custom size e.g. 195/65 R15" style="margin-top:2px"/>
         <div class="inp-hint">Select a common size above or type a custom size</div>
       </div>
-      <div class="fg"><label class="label">Unit Price (₱)</label><input class="inp" type="number" id="mPrice" placeholder="0.00"/></div>
+      <div class="fg"><label class="label">SRP — Supplier Price (₱)</label><input class="inp" type="number" id="mPrice" placeholder="0.00" oninput="calcMarkupPct()"/></div>
+      <div class="fg"><label class="label">Mark Up Price (₱)</label><input class="inp" type="number" id="mMarkup" placeholder="0.00" oninput="calcMarkupPct()"/></div>
+      <div class="fg full" id="markupPctRow" style="display:none">
+        <div style="background:var(--navy3);border:1px solid var(--navy4);border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:12px">
+          <span style="font-size:18px">📊</span>
+          <div>
+            <div style="font-size:11px;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Mark Up Summary</div>
+            <div id="markupPctText" style="font-size:14px;font-weight:700;color:var(--gold)"></div>
+          </div>
+        </div>
+      </div>
       <div class="fg"><label class="label">Stock Qty</label><input class="inp" type="number" id="mQty" placeholder="0"/></div>
       <div class="fg"><label class="label">Min Stock Alert</label><input class="inp" type="number" id="mMin" placeholder="0"/></div>
       <div class="fg full"><label class="label">Notes</label><textarea class="ta" id="mNotes" placeholder="Optional…"></textarea></div>
@@ -1311,7 +1321,10 @@ function renderInv(){
     <tr>
       <td><div class="fw7">${p.product_name}</div><div class="fs11 text-gray">${p.product_id||''} · ${p.brand||''}</div>${p.sku?`<div class="fs11" style="color:var(--gold);opacity:.7">SKU: ${p.sku}</div>`:''}</td>
       <td><span class="badge b-cat">${p.category}</span></td>
-      <td class="num text-gold fw7">${peso(p.unit_price)}<span class="fs11 text-gray">/${p.unit||'pcs'}</span></td>
+      <td class="num text-gold fw7">
+        <div>${peso(p.unit_price)}<span class="fs11 text-gray">/${p.unit||'pcs'}</span></div>
+        ${p.markup_price?`<div style="font-size:11px;color:var(--green);margin-top:2px">MU: ${peso(p.markup_price)} <span style="color:var(--gray)">(+${(((p.markup_price-p.unit_price)/p.unit_price)*100).toFixed(1)}%)</span></div>`:''}
+      </td>
       <td><span class="fw7 ${qtyColor(p)}">${num(p.stock_qty)}</span><span class="fs11 text-gray"> ${p.unit||'pcs'}</span></td>
       <td class="num fw7">${peso((p.unit_price||0)*(p.stock_qty||0))}</td>
       <td>${badgeEl(p)}</td>
@@ -1338,7 +1351,8 @@ function openAdd(){
   editId=null;
   document.getElementById('modalTitle').textContent='+ Add New Product';
   document.getElementById('modalSaveBtn').textContent='Save Product';
-  ['mPid','mName','mBrand','mPrice','mQty','mMin','mNotes','mTireSize'].forEach(id=>document.getElementById(id).value='');
+  ['mPid','mName','mBrand','mPrice','mMarkup','mQty','mMin','mNotes','mTireSize'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('markupPctRow').style.display='none';
   document.getElementById('mCat').value='Tires';
   document.getElementById('mUnit').value='pcs';
   document.querySelectorAll('.size-chip').forEach(c=>c.classList.remove('active'));
@@ -1356,6 +1370,8 @@ function openEdit(id){
   document.getElementById('mCat').value=p.category||'Tires';
   document.getElementById('mUnit').value=p.unit||'pcs';
   document.getElementById('mPrice').value=p.unit_price||'';
+  document.getElementById('mMarkup').value=p.markup_price||'';
+  setTimeout(calcMarkupPct,50);
   document.getElementById('mQty').value=p.stock_qty||'';
   document.getElementById('mMin').value=p.min_stock||'';
   document.getElementById('mNotes').value=p.notes||'';
@@ -1367,6 +1383,27 @@ function openEdit(id){
   document.getElementById('prodModal').classList.add('open');
 }
 function closeModal(){document.getElementById('prodModal').classList.remove('open');}
+function calcMarkupPct(){
+  const srp = parseFloat(document.getElementById('mPrice').value) || 0;
+  const markup = parseFloat(document.getElementById('mMarkup').value) || 0;
+  const row = document.getElementById('markupPctRow');
+  const txt = document.getElementById('markupPctText');
+  if(srp > 0 && markup > 0){
+    const diff = markup - srp;
+    const pct = ((diff / srp) * 100).toFixed(1);
+    const sign = diff >= 0 ? '+' : '';
+    row.style.display = '';
+    if(diff > 0){
+      txt.innerHTML = `SRP ₱${srp.toLocaleString()} → Mark Up ₱${markup.toLocaleString()} &nbsp;|&nbsp; <span style="color:var(--green)">+₱${diff.toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2})} &nbsp; (+${pct}%)</span>`;
+    } else if(diff < 0){
+      txt.innerHTML = `SRP ₱${srp.toLocaleString()} → Mark Up ₱${markup.toLocaleString()} &nbsp;|&nbsp; <span style="color:var(--red)">-₱${Math.abs(diff).toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2})} &nbsp; (${pct}%)</span>`;
+    } else {
+      txt.innerHTML = `SRP ₱${srp.toLocaleString()} → Mark Up ₱${markup.toLocaleString()} &nbsp;|&nbsp; No markup added (0%)`;
+    }
+  } else {
+    row.style.display = 'none';
+  }
+}
 async function saveProduct(){
   const d={
     product_id:document.getElementById('mPid').value.trim(),
@@ -1375,6 +1412,7 @@ async function saveProduct(){
     category:document.getElementById('mCat').value,
     unit:document.getElementById('mUnit').value,
     unit_price:parseFloat(document.getElementById('mPrice').value)||0,
+    markup_price:parseFloat(document.getElementById('mMarkup').value)||0,
     stock_qty:parseInt(document.getElementById('mQty').value)||0,
     min_stock:parseInt(document.getElementById('mMin').value)||0,
     notes:document.getElementById('mNotes').value.trim(),
@@ -1412,7 +1450,7 @@ async function saveProduct(){
   finally{btn.disabled=false;btn.textContent=editId?'Update Product':'Save Product';}
 }
 function buildChanges(old,nw){
-  const fields=['product_name','unit_price','stock_qty','category','brand'];
+  const fields=['product_name','unit_price','markup_price','stock_qty','category','brand'];
   const ch=[];
   fields.forEach(f=>{if(old[f]!==nw[f])ch.push(`${f}: ${old[f]} → ${nw[f]}`);});
   return ch.length?ch.join(', '):'Minor update';
