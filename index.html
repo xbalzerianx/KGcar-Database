@@ -1405,15 +1405,15 @@ function renderDash(){
 
   // filtered expenses
   const expRows=fexp.slice(0,6).map(e=>`
-    <tr><td><div class="fw7">${e.description||'—'}</div></td>
-    <td class="tbl-col-hide"><span class="badge b-cat">${e.category||'—'}</span></td>
-    <td class="num text-red fw7">${peso(e.amount)}</td>
-    <td class="fs11 text-gray tbl-col-hide">${phDate(e.expense_date||e.created_date)}</td>
-    <td class="tbl-col-hide"><span class="badge ${e.recorded_by==='Admin'?'b-admin':'b-asst'}">${e.recorded_by||'—'}</span></td></tr>`).join('')
-    ||`<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--gray)">No expenses in this period</td></tr>`;
+    <tr>
+    <td style="padding:10px 10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:0"><div class="fw7" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.description||'—'}</div><div class="fs11 text-gray">${phDate(e.expense_date||e.created_date)}</div></td>
+    <td style="padding:10px 10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:0"><span class="badge b-cat" style="max-width:80px;overflow:hidden;text-overflow:ellipsis;display:inline-block">${e.category||'—'}</span></td>
+    <td class="num text-red fw7" style="padding:10px 10px;text-align:right;white-space:nowrap">${peso(e.amount)}</td>
+    </tr>`).join('')
+    ||`<tr><td colspan="3" style="text-align:center;padding:24px;color:var(--gray)">No expenses in this period</td></tr>`;
 
   document.getElementById('dashBottom').innerHTML=`
-    <!-- NET PROFIT BANNER — full width, no duplicates -->
+    <!-- NET PROFIT BANNER -->
     <div style="background:var(--navy2);border:1px solid ${netProfit>=0?'rgba(212,168,67,.35)':'rgba(239,68,68,.35)'};border-radius:var(--r);padding:20px 28px;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
       <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${netProfit>=0?'var(--gold)':'var(--red)'}"></div>
       <div style="display:flex;align-items:center;gap:16px">
@@ -1429,27 +1429,37 @@ function renderDash(){
       </div>
     </div>
 
-    <!-- SALES + EXPENSES TABLES side by side -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px" class="dash-bottom-grid">
-      <div class="card">
+    <!-- SALES + EXPENSES — 3 slim cols each, no overflow -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="card" style="min-width:0;overflow:hidden">
         <div class="card-hdr">
           <div class="card-title">💰 Sales · ${lbl}</div>
           <button class="btn btn-ghost btn-xs" onclick="go('saleslog')">View All →</button>
         </div>
-        <div class="tbl-wrap" style="border:none"><table>
-          <thead><tr><th class="tbl-col-hide">ID</th><th>Product</th><th class="tbl-col-hide">Cat</th><th>Total</th><th class="tbl-col-hide">By</th></tr></thead>
+        <table style="width:100%;border-collapse:collapse;table-layout:fixed">
+          <colgroup><col style="width:42%"><col style="width:28%"><col style="width:30%"></colgroup>
+          <thead><tr>
+            <th style="padding:8px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--gray);text-align:left;border-bottom:1px solid var(--navy3)">Product</th>
+            <th style="padding:8px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--gray);text-align:left;border-bottom:1px solid var(--navy3)">Category</th>
+            <th style="padding:8px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--gray);text-align:right;border-bottom:1px solid var(--navy3)">Total</th>
+          </tr></thead>
           <tbody>${topRows}</tbody>
-        </table></div>
+        </table>
       </div>
-      <div class="card">
+      <div class="card" style="min-width:0;overflow:hidden">
         <div class="card-hdr">
           <div class="card-title">💸 Expenses · ${lbl}</div>
           <button class="btn btn-ghost btn-xs" onclick="go('expenses')">View All →</button>
         </div>
-        <div class="tbl-wrap" style="border:none"><table>
-          <thead><tr><th>Description</th><th class="tbl-col-hide">Cat</th><th>Amount</th><th class="tbl-col-hide">Date</th><th class="tbl-col-hide">By</th></tr></thead>
+        <table style="width:100%;border-collapse:collapse;table-layout:fixed">
+          <colgroup><col style="width:42%"><col style="width:28%"><col style="width:30%"></colgroup>
+          <thead><tr>
+            <th style="padding:8px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--gray);text-align:left;border-bottom:1px solid var(--navy3)">Description</th>
+            <th style="padding:8px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--gray);text-align:left;border-bottom:1px solid var(--navy3)">Category</th>
+            <th style="padding:8px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--gray);text-align:right;border-bottom:1px solid var(--navy3)">Amount</th>
+          </tr></thead>
           <tbody>${expRows}</tbody>
-        </table></div>
+        </table>
         <button class="btn btn-gold btn-sm" style="width:100%;justify-content:center;margin-top:14px" onclick="openAddExpense()">+ Add Expense</button>
       </div>
     </div>`
