@@ -778,6 +778,7 @@ tbody td{padding:13px 16px;vertical-align:middle}
       <div id="page-alerts" class="page">
         <div class="page-hdr"><div class="page-title">Stock Alerts</div><div class="page-sub">Products needing immediate attention</div></div>
         <div id="alertsBody"></div>
+      </div><!-- /page-alerts -->
 
       <!-- ══ CATEGORY MANAGER ══ -->
       <div id="page-catmgr" class="page">
@@ -1092,8 +1093,9 @@ function logout() {
 }
 
 // auto-login if remembered
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
   clock(); setInterval(clock,30000);
+  await loadPinsFromSupabase();
   // Show login screen fresh every time (no auto-login)
   document.getElementById('loginWrap').style.display='flex';
 });
@@ -1224,6 +1226,7 @@ async function go(page){
   curPage=page;
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+page).classList.add('active');
+  const mainEl=document.querySelector('.main'); if(mainEl) mainEl.scrollTop=0;
   document.querySelectorAll('.sb-item,.mob-item').forEach(b=>b.classList.toggle('active',b.dataset.page===page));
   document.getElementById('tbTitle').textContent=TITLES[page]||'';
   if(page==='sale')resetSale();
