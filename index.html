@@ -778,6 +778,23 @@ tbody td{padding:13px 16px;vertical-align:middle}
       <div id="page-alerts" class="page">
         <div class="page-hdr"><div class="page-title">Stock Alerts</div><div class="page-sub">Products needing immediate attention</div></div>
         <div id="alertsBody"></div>
+
+      <!-- ══ CATEGORY MANAGER ══ -->
+      <div id="page-catmgr" class="page">
+        <div class="page-hdr">
+          <h1 class="page-title">🗂️ Category Manager</h1>
+          <p class="page-sub">Add or remove product categories. Changes apply app-wide instantly.</p>
+        </div>
+        <div class="card" style="max-width:560px">
+          <div class="card-hdr"><span class="card-title">Add New Category</span></div>
+          <div class="flex gap8" style="margin-bottom:20px">
+            <input class="inp" id="newCatInput" placeholder="e.g. Spark Plugs" style="flex:1" onkeydown="if(event.key==='Enter')addCategory()"/>
+            <button class="btn btn-gold" onclick="addCategory()">+ Add</button>
+          </div>
+          <div class="card-hdr" style="margin-top:8px"><span class="card-title">Current Categories</span></div>
+          <div id="catMgrList" style="display:flex;flex-direction:column;gap:8px;margin-top:8px"></div>
+        </div>
+      </div>
       </div>
 
     </div>
@@ -937,20 +954,6 @@ tbody td{padding:13px 16px;vertical-align:middle}
       <button class="btn btn-ghost" style="min-width:120px" onclick="closeDelModal()">Cancel</button>
       <button class="btn btn-xs" id="delConfirmBtn" style="background:var(--red);color:#fff;border:none;padding:10px 24px;font-size:13px;border-radius:var(--r2);min-width:120px" onclick="doDelete()">Yes, Delete</button>
     </div>
-  </div>
-</div>
-
-      <!-- ══════════ CATEGORY MANAGER PAGE ══════════ -->
-      <div id="page-catmgr" class="page">
-  <div class="page-hdr"><h1 class="page-title">🗂️ Category Manager</h1><p class="page-sub">Add or remove product categories. Changes apply app-wide instantly.</p></div>
-  <div class="card" style="max-width:560px">
-    <div class="card-hdr"><span class="card-title">Add New Category</span></div>
-    <div class="flex gap8" style="margin-bottom:20px">
-      <input class="inp" id="newCatInput" placeholder="e.g. Spark Plugs" style="flex:1" onkeydown="if(event.key==='Enter')addCategory()"/>
-      <button class="btn btn-gold" onclick="addCategory()">+ Add</button>
-    </div>
-    <div class="card-hdr" style="margin-top:8px"><span class="card-title">Current Categories</span></div>
-    <div id="catMgrList" style="display:flex;flex-direction:column;gap:8px;margin-top:8px"></div>
   </div>
 </div>
 
