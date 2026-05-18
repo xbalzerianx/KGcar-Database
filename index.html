@@ -940,10 +940,8 @@ tbody td{padding:13px 16px;vertical-align:middle}
   </div>
 </div>
 
-<div class="toasts" id="toasts"></div>
-
-<!-- ══════════ CATEGORY MANAGER PAGE ══════════ -->
-<div id="page-catmgr" class="page">
+      <!-- ══════════ CATEGORY MANAGER PAGE ══════════ -->
+      <div id="page-catmgr" class="page">
   <div class="page-hdr"><h1 class="page-title">🗂️ Category Manager</h1><p class="page-sub">Add or remove product categories. Changes apply app-wide instantly.</p></div>
   <div class="card" style="max-width:560px">
     <div class="card-hdr"><span class="card-title">Add New Category</span></div>
@@ -955,6 +953,9 @@ tbody td{padding:13px 16px;vertical-align:middle}
     <div id="catMgrList" style="display:flex;flex-direction:column;gap:8px;margin-top:8px"></div>
   </div>
 </div>
+
+<div class="toasts" id="toasts"></div>
+
 
 <script>
 // ═══════════════════ CONFIG ═══════════════════
@@ -1212,7 +1213,7 @@ async function loadAll(){
 }
 
 // ═══════════════════ NAVIGATION ═══════════════════
-const TITLES={dashboard:'Dashboard',inventory:'Products & Inventory',sale:'Record Sale',saleslog:'Sales Log',expenses:'Expenses',actlog:'Activity Log',alerts:'Stock Alerts'};
+const TITLES={dashboard:'Dashboard',inventory:'Products & Inventory',sale:'Record Sale',saleslog:'Sales Log',expenses:'Expenses',actlog:'Activity Log',alerts:'Stock Alerts',catmgr:'Category Manager'};
 async function go(page){
   curPage=page;
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -1220,6 +1221,7 @@ async function go(page){
   document.querySelectorAll('.sb-item,.mob-item').forEach(b=>b.classList.toggle('active',b.dataset.page===page));
   document.getElementById('tbTitle').textContent=TITLES[page]||'';
   if(page==='sale')resetSale();
+  if(page==='catmgr')renderCatMgr();
   // Refresh ALL data when navigating to activity log
   if(page==='actlog'){
     document.getElementById('actLogBody').innerHTML='<div class="loader"><div class="spin"></div>Loading…</div>';
