@@ -396,6 +396,15 @@ tbody td{padding:13px 16px;vertical-align:middle}
   .tb-sale-text{display:none}
 }
 /* ── INVENTORY SUMMARY BAR ── */
+.cat-stock-bar{display:flex;align-items:center;flex-wrap:wrap;gap:6px 14px;background:var(--navy2);border:1px solid var(--navy3);border-radius:var(--r);padding:10px 16px;margin-bottom:10px;font-size:13px}
+.cat-bar-label{font-weight:700;color:#fff;margin-right:4px}
+.cat-bar-divider{color:var(--navy4);font-size:16px;margin:0 2px}
+.cat-bar-item{display:flex;align-items:center;gap:6px}
+.cat-bar-key{color:var(--gray);font-size:11px;font-weight:600;letter-spacing:.5px;text-transform:uppercase}
+.cat-bar-val{font-weight:800;color:#fff;font-size:13px}
+.cat-bar-val.gold{color:var(--gold)}
+.cat-bar-val.green{color:var(--green)}
+@media(max-width:600px){.cat-stock-bar{gap:8px 10px;padding:10px 12px;font-size:12px}.cat-bar-divider{display:none}}
 .inv-totals-row td{background:rgba(255,255,255,.02)}
 .inv-totals-row:hover td{background:rgba(255,255,255,.02) !important}
 .inv-summary-bar{display:flex;align-items:center;gap:0;background:var(--navy2);border:1px solid var(--navy3);border-radius:var(--r);margin-top:10px;padding:14px 20px;flex-wrap:wrap;gap:8px}
@@ -581,6 +590,8 @@ tbody td{padding:13px 16px;vertical-align:middle}
             <option value="ok">✅ OK</option><option value="low">⚠️ Low Stock</option><option value="out">⛔ Out of Stock</option>
           </select>
         </div>
+        <!-- CATEGORY STOCK TOTALS BAR -->
+        <div id="catStockBar" class="cat-stock-bar"></div>
         <div class="tbl-wrap">
           <table>
             <thead><tr><th>Product</th><th class="tbl-col-hide">Category</th><th>SRP / Mark Up</th><th>Stock</th><th class="tbl-col-hide">SRP Value</th><th class="tbl-col-hide">Markup Value</th><th>Status</th><th>Actions</th></tr></thead>
@@ -1467,6 +1478,25 @@ function renderInv(){
       </div></td>
     </tr>`).join('')||`<tr><td colspan="8"><div class="empty"><div class="empty-icon">📦</div><div>No products found</div></div></td></tr>`;
   document.getElementById('invFooter').innerHTML='';
+
+  // Update category stock totals bar
+  const catBar = document.getElementById('catStockBar');
+  if(catBar){
+    const selCat = document.getElementById('invCat').value;
+    const totalStock = list.reduce((s,p)=>s+(p.stock_qty||0),0);
+    const totalUnits = list.length;
+    const catLabel = selCat ? selCat : 'All Categories';
+    catBar.innerHTML = `
+      <span class="cat-bar-label">📊 ${catLabel}</span>
+      <span class="cat-bar-divider">·</span>
+      <span class="cat-bar-item"><span class="cat-bar-key">Products</span><span class="cat-bar-val">${totalUnits}</span></span>
+      <span class="cat-bar-divider">·</span>
+      <span class="cat-bar-item"><span class="cat-bar-key">Total Stock</span><span class="cat-bar-val gold">${num(totalStock)} pcs</span></span>
+      <span class="cat-bar-divider">·</span>
+      <span class="cat-bar-item"><span class="cat-bar-key">SRP Value</span><span class="cat-bar-val gold">${peso(totVal)}</span></span>
+      <span class="cat-bar-divider">·</span>
+      <span class="cat-bar-item"><span class="cat-bar-key">Markup Value</span><span class="cat-bar-val green">${peso(totMarkupVal)}</span></span>`;
+  }
 }
 
 // ═══════════════════ ADD / EDIT ═══════════════════
