@@ -1413,22 +1413,36 @@ function renderDash(){
     ||`<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--gray)">No expenses in this period</td></tr>`;
 
   document.getElementById('dashBottom').innerHTML=`
-    <div class="profit-banner" style="display:flex;align-items:center;justify-content:space-between;background:var(--navy2);border:1px solid ${netProfit>=0?'rgba(212,168,67,.25)':'rgba(239,68,68,.25)'};border-radius:var(--r);padding:14px 20px;margin-bottom:16px">
-      <div style="display:flex;align-items:center;gap:14px">
-        <span style="font-size:28px">${netProfit>=0?'📈':'📉'}</span>
-        <div>
-          <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--gray);margin-bottom:4px">Net Profit · ${lbl}</div>
+    <!-- PROFIT / REVENUE / EXPENSES ROW -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px" class="profit-row">
+      <div style="background:var(--navy2);border:1px solid ${netProfit>=0?'rgba(212,168,67,.35)':'rgba(239,68,68,.35)'};border-radius:var(--r);padding:22px 24px;position:relative;overflow:hidden">
+        <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${netProfit>=0?'var(--gold)':'var(--red)'}"></div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--gray);margin-bottom:10px">Net Profit · ${lbl}</div>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+          <span style="font-size:28px">${netProfit>=0?'📈':'📉'}</span>
           <div style="font-size:28px;font-weight:800;color:${netProfit>=0?'var(--gold)':'var(--red)'};letter-spacing:-1px">${peso(netProfit)}</div>
         </div>
+        <div style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:6px;background:${netProfit>=0?'var(--green2)':'var(--red2)'};color:${netProfit>=0?'var(--green)':'var(--red)'};font-size:12px;font-weight:700">${netProfit>=0?'▲ Profitable':'▼ At a loss'}</div>
       </div>
-      <div class="profit-banner-right" style="text-align:right">
-        <div style="font-size:11px;margin-top:6px;padding:5px 14px;border-radius:6px;display:inline-block;background:${netProfit>=0?'var(--green2)':'var(--red2)'};color:${netProfit>=0?'var(--green)':'var(--red)'};font-weight:700">${netProfit>=0?'▲ Profitable':'▼ At a loss'}</div>
+      <div style="background:var(--navy2);border:1px solid var(--navy3);border-radius:var(--r);padding:22px 24px;position:relative;overflow:hidden">
+        <div style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--green)"></div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--gray);margin-bottom:10px">Revenue · ${lbl}</div>
+        <div style="font-size:28px;font-weight:800;color:var(--green);letter-spacing:-1px;margin-bottom:8px">${peso(periodRev)}</div>
+        <div style="font-size:12px;color:var(--gray)">${periodTx} transactions · ${num(periodQty)} units sold</div>
+      </div>
+      <div style="background:var(--navy2);border:1px solid var(--navy3);border-radius:var(--r);padding:22px 24px;position:relative;overflow:hidden">
+        <div style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--red)"></div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--gray);margin-bottom:10px">Expenses · ${lbl}</div>
+        <div style="font-size:28px;font-weight:800;color:var(--red);letter-spacing:-1px;margin-bottom:8px">${peso(periodExpTot)}</div>
+        <div style="font-size:12px;color:var(--gray)">${fexp.length} entries recorded</div>
       </div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px" class="dash-bottom-grid">
+
+    <!-- SALES + EXPENSES TABLES -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px" class="dash-bottom-grid">
       <div class="card">
         <div class="card-hdr">
-          <div><div class="card-title">💰 Sales · ${lbl}</div></div>
+          <div class="card-title">💰 Sales · ${lbl}</div>
           <button class="btn btn-ghost btn-xs" onclick="go('saleslog')">View All →</button>
         </div>
         <div class="tbl-wrap" style="border:none"><table>
@@ -1438,7 +1452,7 @@ function renderDash(){
       </div>
       <div class="card">
         <div class="card-hdr">
-          <div><div class="card-title">💸 Expenses · ${lbl}</div></div>
+          <div class="card-title">💸 Expenses · ${lbl}</div>
           <button class="btn btn-ghost btn-xs" onclick="go('expenses')">View All →</button>
         </div>
         <div class="tbl-wrap" style="border:none"><table>
@@ -1447,7 +1461,7 @@ function renderDash(){
         </table></div>
         <button class="btn btn-gold btn-sm" style="width:100%;justify-content:center;margin-top:14px" onclick="openAddExpense()">+ Add Expense</button>
       </div>
-    </div>`;
+    </div>`
 }
 
 // ═══════════════════ INVENTORY ═══════════════════
