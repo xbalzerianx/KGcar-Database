@@ -961,7 +961,7 @@ tbody td{padding:13px 16px;vertical-align:middle}
 const SB_URL = 'https://stigramvmyckdmyipvnj.supabase.co/rest/v1';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN0aWdyYW12bXlja2RteWlwdm5qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4MDQ3MjksImV4cCI6MjA4OTM4MDcyOX0.UuOy28Y_TXU_uJ3qPRaGyPXu23LWrS37FG38asyUOn8';
 const SB_HDR = {'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY};
-const TBL = {KGProduct:'kg_products',KGSale:'kg_sales',KGExpense:'kg_expenses',KGActivity:'kg_activity'};
+const TBL = {KGProduct:'kg_products',KGSale:'kg_sales',KGExpense:'kg_expenses',KGActivity:'kg_activity',KGCategory:'kg_categories'};
 
 // ═══════════════════ API (Supabase) ═══════════════════
 async function apiGet(e,id=''){
@@ -1013,7 +1013,7 @@ const CAT_COLORS = {
 };
 
 // ═══════════════════ STATE ═══════════════════
-let products=[], sales=[], expenses=[], actLogs=[], curPage='dashboard';
+let products=[], sales=[], expenses=[], actLogs=[], categories=[], curPage='dashboard';
 let editId=null, selProd=null, curFilter='today', filterFrom='', filterTo='';
 let curUser=null, pinEntry='', pinTarget=null, actFilter='all';
 
@@ -1172,11 +1172,12 @@ function genSaleId(){
 // ═══════════════════ LOAD ═══════════════════
 async function loadAll(){
   try {
-    [products, sales, expenses, actLogs] = await Promise.all([
+    [products, sales, expenses, actLogs, categories] = await Promise.all([
       apiGet('KGProduct'),
       apiGet('KGSale'),
       apiGet('KGExpense').catch(()=>[]),
       apiGet('KGActivity').catch(()=>[]),
+      apiGet('KGCategory').catch(()=>[]),
     ]);
     sales.forEach(s=>{ if(s.created_date&&s.created_date.includes('T')&&!s.created_date.endsWith('Z')&&!s.created_date.includes('+')) s.created_date+='Z'; });
     sales.sort((a,b)=>new Date(b.created_date||0)-new Date(a.created_date||0));
@@ -1196,6 +1197,7 @@ async function loadAll(){
     renderExpenses();
     render();
     populateCatDropdown();
+    refreshMCatSelect();
     // Pre-render actlog so spinner is removed even if not navigated yet
     if(curPage!=='actlog') {
       const body=document.getElementById('actLogBody');
@@ -1435,8 +1437,6 @@ function renderDash(){
 function populateCatDropdown(){
   const sel = document.getElementById('invCat');
   const current = sel.value;
-  // All fixed categories (always show all)
-  const DEFAULT_CATS = ['Tires','Engine Oil','Brake Pads','Brake Oil','Filters','Batteries','Wipers','Lights','Belts & Hoses','Accessories'];
   const ALL_CATS = getCategories();
   // Count products per category
   const counts = {};
@@ -2109,49 +2109,55 @@ document.getElementById('expModal').addEventListener('click',e=>{
 });
 
 
-// ═══════════════════ CATEGORY MANAGER ═══════════════════
+// ═══════════════════ CATEGORY MANAGER (Supabase) ═══════════════════
 const DEFAULT_CATS_GLOBAL = ['Tires','Engine Oil','Brake Pads','Brake Oil','Filters','Batteries','Wipers','Lights','Belts & Hoses','Accessories'];
 
 function getCategories(){
-  try {
-    const saved = localStorage.getItem('kgcar_categories');
-    if(saved) return JSON.parse(saved);
-  } catch(e){}
+  if(categories && categories.length>0)
+    return categories.map(c=>c.name).sort((a,b)=>a.localeCompare(b));
   return [...DEFAULT_CATS_GLOBAL];
 }
 
-function saveCategories(cats){
-  localStorage.setItem('kgcar_categories', JSON.stringify(cats));
-}
-
-function addCategory(){
+async function addCategory(){
   const input = document.getElementById('newCatInput');
   const val = (input.value||'').trim();
   if(!val){ toast('Enter a category name','err'); return; }
-  const cats = getCategories();
-  if(cats.map(c=>c.toLowerCase()).includes(val.toLowerCase())){
+  const existing = getCategories();
+  if(existing.map(c=>c.toLowerCase()).includes(val.toLowerCase())){
     toast('Category already exists','err'); return;
   }
-  cats.push(val);
-  saveCategories(cats);
-  input.value='';
-  renderCatMgr();
-  populateCatDropdown();
-  refreshMCatSelect();
-  toast(`✅ "${val}" added`,'ok');
+  try {
+    const newCat = await apiPost('KGCategory', {name: val});
+    categories.push(newCat);
+    input.value='';
+    renderCatMgr();
+    populateCatDropdown();
+    refreshMCatSelect();
+    toast(`✅ "${val}" added`,'ok');
+  } catch(e) {
+    toast('Error saving category','err');
+    console.error(e);
+  }
 }
 
-function removeCategory(cat){
-  const inUse = products.filter(p=>p.category===cat).length;
+async function removeCategory(id, name){
+  const inUse = products.filter(p=>p.category===name).length;
   if(inUse>0){
-    if(!confirm(`"${cat}" is used by ${inUse} product(s). Remove it from the list anyway? Products will keep their category value.`)) return;
+    if(!confirm(`"${name}" is used by ${inUse} product(s). Remove it from the list anyway? Products will keep their category value.`)) return;
   }
-  const cats = getCategories().filter(c=>c!==cat);
-  saveCategories(cats);
-  renderCatMgr();
-  populateCatDropdown();
-  refreshMCatSelect();
-  toast(`🗑️ "${cat}" removed`,'ok');
+  try {
+    const tbl = TBL['KGCategory'];
+    const r = await fetch(`${SB_URL}/${tbl}?id=eq.${id}`,{method:'DELETE',headers:SB_HDR});
+    if(!r.ok) throw new Error(await r.text());
+    categories = categories.filter(c=>c.id!==id);
+    renderCatMgr();
+    populateCatDropdown();
+    refreshMCatSelect();
+    toast(`🗑️ "${name}" removed`,'ok');
+  } catch(e) {
+    toast('Error removing category','err');
+    console.error(e);
+  }
 }
 
 function renderCatMgr(){
@@ -2160,11 +2166,15 @@ function renderCatMgr(){
   const cats = getCategories();
   const counts = {};
   products.forEach(p=>{ const c=p.category||'Uncategorized'; counts[c]=(counts[c]||0)+1; });
-  list.innerHTML = cats.map(c=>`
+  // Get full category objects for id reference
+  const catObjs = categories.sort((a,b)=>a.name.localeCompare(b.name));
+  list.innerHTML = catObjs.length===0
+    ? '<div style="color:var(--gray);font-size:13px;padding:12px 0">No categories yet. Add one above.</div>'
+    : catObjs.map(c=>`
     <div class="cat-mgr-item">
-      <span>🏷️ ${c} <span class="cat-count">(${counts[c]||0} product${(counts[c]||0)!==1?'s':''})</span></span>
-      <button class="cat-mgr-del" onclick="removeCategory('${c.replace(/'/g,"\\'")}')" >🗑️ Remove</button>
-    </div>`).join('') || '<div style="color:var(--gray);font-size:13px;padding:12px 0">No categories yet. Add one above.</div>';
+      <span>🏷️ ${c.name} <span class="cat-count">(${counts[c.name]||0} product${(counts[c.name]||0)!==1?'s':''})</span></span>
+      <button class="cat-mgr-del" onclick="removeCategory('${c.id}','${c.name.replace(/'/g,"\'")}')">🗑️ Remove</button>
+    </div>`).join('');
 }
 
 function refreshMCatSelect(){
@@ -2175,7 +2185,6 @@ function refreshMCatSelect(){
   sel.innerHTML = cats.map(c=>`<option value="${c}" ${current===c?'selected':''}>${c}</option>`).join('');
   toggleTireSizeRow(sel.value);
 }
-
 </script>
 </body>
 </html>
