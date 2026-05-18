@@ -793,6 +793,7 @@ tbody td{padding:13px 16px;vertical-align:middle}
     <button class="mob-item" data-page="saleslog" onclick="go('saleslog')"><span class="mob-item-icon">📋</span>Log</button>
     <button class="mob-item" data-page="expenses" onclick="go('expenses')"><span class="mob-item-icon">💸</span>Expenses</button>
 <button class="mob-item" data-page="actlog" onclick="go('actlog')"><span class="mob-item-icon">🕓</span>Logs</button>
+    <button class="mob-item" data-page="catmgr" onclick="go('catmgr')" id="mobCatMgrBtn" style="display:none"><span class="mob-item-icon">🗂️</span>Categories</button>
     <button class="mob-item" data-page="alerts" onclick="go('alerts')"><span class="mob-item-icon">⚠️</span>Alerts</button>
   </div>
 </nav>
@@ -1067,6 +1068,10 @@ async function launchApp() {
   document.getElementById('saleBy').value = curUser.name;
   const cpBtn=document.getElementById('sbChangePinBtn');
   if(cpBtn) cpBtn.style.display=curUser.role==='admin'?'block':'none';
+  const catMgrBtn=document.getElementById('sbCatMgrBtn');
+  if(catMgrBtn) catMgrBtn.style.display=curUser.role==='admin'?'flex':'none';
+  const mobCatMgrBtn=document.getElementById('mobCatMgrBtn');
+  if(mobCatMgrBtn) mobCatMgrBtn.style.display=curUser.role==='admin'?'flex':'none';
   clock(); setInterval(clock,30000);
   document.getElementById('saleDate').value = today();
   await loadAll();
