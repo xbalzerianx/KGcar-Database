@@ -406,6 +406,12 @@ tbody td{padding:13px 16px;vertical-align:middle}
 .cat-bar-val.green{color:var(--green)}
 @media(max-width:600px){.cat-stock-bar{gap:8px 10px;padding:10px 12px;font-size:12px}.cat-bar-divider{display:none}}
 .inv-totals-row td{background:rgba(255,255,255,.02)}
+.cat-mgr-item{display:flex;align-items:center;justify-content:space-between;background:var(--navy2);border:1px solid var(--navy3);border-radius:var(--r);padding:10px 14px;font-size:13px;font-weight:600;color:#fff}
+.cat-mgr-item span{display:flex;align-items:center;gap:8px}
+.cat-mgr-item .cat-count{font-size:11px;color:var(--gray);font-weight:400}
+.cat-mgr-del{background:rgba(239,68,68,.12);color:var(--red);border:1px solid rgba(239,68,68,.25);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;transition:.2s}
+.cat-mgr-del:hover{background:rgba(239,68,68,.25)}
+.cat-mgr-default{font-size:10px;color:var(--gray);margin-left:4px}
 .inv-totals-row:hover td{background:rgba(255,255,255,.02) !important}
 .inv-summary-bar{display:flex;align-items:center;gap:0;background:var(--navy2);border:1px solid var(--navy3);border-radius:var(--r);margin-top:10px;padding:14px 20px;flex-wrap:wrap;gap:8px}
 .inv-sum-item{display:flex;flex-direction:column;gap:3px;flex:1;min-width:140px}
@@ -517,6 +523,9 @@ tbody td{padding:13px 16px;vertical-align:middle}
     <button class="sb-item" data-page="alerts" onclick="go('alerts')">
       <span class="sb-item-icon">⚠️</span>Stock Alerts
       <span class="sb-badge yellow" id="sbBadge" style="display:none">0</span>
+    </button>
+    <button class="sb-item" data-page="catmgr" onclick="go('catmgr')" id="sbCatMgrBtn" style="display:none">
+      <span class="sb-item-icon">🗂️</span>Category Manager
     </button>
     <div class="sb-footer">
       <div id="sbChangePinBtn" style="display:none;margin-bottom:10px">
@@ -931,6 +940,20 @@ tbody td{padding:13px 16px;vertical-align:middle}
 </div>
 
 <div class="toasts" id="toasts"></div>
+
+<!-- ══════════ CATEGORY MANAGER PAGE ══════════ -->
+<div id="page-catmgr" class="page" style="display:none">
+  <div class="page-hdr"><h1 class="page-title">🗂️ Category Manager</h1><p class="page-sub">Add or remove product categories. Changes apply app-wide instantly.</p></div>
+  <div class="card" style="max-width:560px">
+    <div class="card-hdr"><span class="card-title">Add New Category</span></div>
+    <div class="flex gap8" style="margin-bottom:20px">
+      <input class="inp" id="newCatInput" placeholder="e.g. Spark Plugs" style="flex:1" onkeydown="if(event.key==='Enter')addCategory()"/>
+      <button class="btn btn-gold" onclick="addCategory()">+ Add</button>
+    </div>
+    <div class="card-hdr" style="margin-top:8px"><span class="card-title">Current Categories</span></div>
+    <div id="catMgrList" style="display:flex;flex-direction:column;gap:8px;margin-top:8px"></div>
+  </div>
+</div>
 
 <script>
 // ═══════════════════ CONFIG ═══════════════════
@@ -1408,7 +1431,8 @@ function populateCatDropdown(){
   const sel = document.getElementById('invCat');
   const current = sel.value;
   // All fixed categories (always show all)
-  const ALL_CATS = ['Tires','Engine Oil','Brake Pads','Brake Oil','Filters','Batteries','Wipers','Lights','Belts & Hoses','Accessories'];
+  const DEFAULT_CATS = ['Tires','Engine Oil','Brake Pads','Brake Oil','Filters','Batteries','Wipers','Lights','Belts & Hoses','Accessories'];
+  const ALL_CATS = getCategories();
   // Count products per category
   const counts = {};
   products.forEach(p => {
@@ -1511,6 +1535,7 @@ function pickTireSize(el,size){
 }
 function openAdd(){
   editId=null;
+  refreshMCatSelect();
   document.getElementById('modalTitle').textContent='+ Add New Product';
   document.getElementById('modalSaveBtn').textContent='Save Product';
   ['mPid','mName','mBrand','mPrice','mMarkup','mQty','mMin','mNotes','mTireSize'].forEach(id=>document.getElementById(id).value='');
@@ -1524,6 +1549,7 @@ function openAdd(){
 function openEdit(id){
   const p=products.find(x=>x.id===id);if(!p)return;
   editId=id;
+  refreshMCatSelect();
   document.getElementById('modalTitle').textContent='✏️ Edit Product';
   document.getElementById('modalSaveBtn').textContent='Update Product';
   document.getElementById('mPid').value=p.product_id||'';
@@ -2076,6 +2102,75 @@ document.getElementById('prodModal').addEventListener('click',e=>{
 document.getElementById('expModal').addEventListener('click',e=>{
   if(e.target===document.getElementById('expModal'))closeExpModal();
 });
+
+
+// ═══════════════════ CATEGORY MANAGER ═══════════════════
+const DEFAULT_CATS_GLOBAL = ['Tires','Engine Oil','Brake Pads','Brake Oil','Filters','Batteries','Wipers','Lights','Belts & Hoses','Accessories'];
+
+function getCategories(){
+  try {
+    const saved = localStorage.getItem('kgcar_categories');
+    if(saved) return JSON.parse(saved);
+  } catch(e){}
+  return [...DEFAULT_CATS_GLOBAL];
+}
+
+function saveCategories(cats){
+  localStorage.setItem('kgcar_categories', JSON.stringify(cats));
+}
+
+function addCategory(){
+  const input = document.getElementById('newCatInput');
+  const val = (input.value||'').trim();
+  if(!val){ toast('Enter a category name','err'); return; }
+  const cats = getCategories();
+  if(cats.map(c=>c.toLowerCase()).includes(val.toLowerCase())){
+    toast('Category already exists','err'); return;
+  }
+  cats.push(val);
+  saveCategories(cats);
+  input.value='';
+  renderCatMgr();
+  populateCatDropdown();
+  refreshMCatSelect();
+  toast(`✅ "${val}" added`,'ok');
+}
+
+function removeCategory(cat){
+  const inUse = products.filter(p=>p.category===cat).length;
+  if(inUse>0){
+    if(!confirm(`"${cat}" is used by ${inUse} product(s). Remove it from the list anyway? Products will keep their category value.`)) return;
+  }
+  const cats = getCategories().filter(c=>c!==cat);
+  saveCategories(cats);
+  renderCatMgr();
+  populateCatDropdown();
+  refreshMCatSelect();
+  toast(`🗑️ "${cat}" removed`,'ok');
+}
+
+function renderCatMgr(){
+  const list = document.getElementById('catMgrList');
+  if(!list) return;
+  const cats = getCategories();
+  const counts = {};
+  products.forEach(p=>{ const c=p.category||'Uncategorized'; counts[c]=(counts[c]||0)+1; });
+  list.innerHTML = cats.map(c=>`
+    <div class="cat-mgr-item">
+      <span>🏷️ ${c} <span class="cat-count">(${counts[c]||0} product${(counts[c]||0)!==1?'s':''})</span></span>
+      <button class="cat-mgr-del" onclick="removeCategory('${c.replace(/'/g,"\\'")}')" >🗑️ Remove</button>
+    </div>`).join('') || '<div style="color:var(--gray);font-size:13px;padding:12px 0">No categories yet. Add one above.</div>';
+}
+
+function refreshMCatSelect(){
+  const sel = document.getElementById('mCat');
+  if(!sel) return;
+  const current = sel.value;
+  const cats = getCategories();
+  sel.innerHTML = cats.map(c=>`<option value="${c}" ${current===c?'selected':''}>${c}</option>`).join('');
+  toggleTireSizeRow(sel.value);
+}
+
 </script>
 </body>
 </html>
