@@ -3425,8 +3425,8 @@ function _renderEmpGrid(commMap) {
     const isInactive = emp.status === 'inactive';
     const initial = (emp.name || '?')[0].toUpperCase();
     const photoHtml = emp.photo_url
-      ? `<img src="${emp.photo_url}" style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:2.5px solid #d4a843;flex-shrink:0"/>`
-      : `<div style="width:56px;height:56px;border-radius:50%;background:#1f2937;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#d4a843;border:2.5px solid #d4a843;flex-shrink:0">${initial}</div>`;
+      ? `<img src="${emp.photo_url}" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:2.5px solid var(--gold);flex-shrink:0"/>`
+      : `<div style="width:64px;height:64px;border-radius:50%;background:var(--navy3);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;color:var(--gold);border:2.5px solid var(--gold);flex-shrink:0">${initial}</div>`;
 
     const key = (emp.name || '').toLowerCase().trim();
     const cm = commMap[key];
@@ -3435,44 +3435,46 @@ function _renderEmpGrid(commMap) {
     const commLabor  = cm ? cm.laborTotal : 0;
 
     const earnedBadge = cm
-      ? `<div style="margin-top:2px;background:#0d1f10;border:1px solid #1e4d20;border-radius:10px;padding:10px 12px">
-           <div style="font-size:10px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px">💰 Commission Earned</div>
-           <div style="display:flex;align-items:center;justify-content:space-between">
-             <div style="font-size:22px;font-weight:800;color:#4ade80">${peso(commEarned)}</div>
-             <div style="text-align:right">
-               <div style="font-size:11px;color:#9ca3af">${commJobs} job${commJobs!==1?'s':''}</div>
-               <div style="font-size:11px;color:#9ca3af">Labor: ${peso(commLabor)}</div>
+      ? `<div style="background:rgba(74,222,128,.07);border:1px solid rgba(74,222,128,.2);border-radius:10px;padding:12px 14px">
+           <div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">💰 Commission Earned</div>
+           <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+             <div style="font-size:20px;font-weight:800;color:#4ade80">${peso(commEarned)}</div>
+             <div style="text-align:right;flex-shrink:0">
+               <div style="font-size:11px;color:var(--gray);font-weight:600">${commJobs} job${commJobs!==1?'s':''}</div>
+               <div style="font-size:11px;color:var(--gray)">Labor: ${peso(commLabor)}</div>
              </div>
            </div>
          </div>`
-      : `<div style="margin-top:2px;background:#0b1120;border:1px dashed #1f2937;border-radius:10px;padding:10px 12px;text-align:center">
-           <div style="font-size:11px;color:#4b5563">No completed work orders yet</div>
+      : `<div style="background:var(--navy3);border:1px dashed var(--navy4);border-radius:10px;padding:12px 14px;text-align:center">
+           <div style="font-size:12px;color:var(--gray)">No work orders yet</div>
          </div>`;
 
     return `
-    <div style="background:#111827;border-radius:14px;border:1px solid #1f2937;padding:18px;display:flex;flex-direction:column;gap:12px;opacity:${isInactive ? 0.55 : 1}">
-      <div style="display:flex;align-items:center;gap:14px">
+    <div style="background:var(--navy2);border-radius:16px;border:1px solid var(--navy3);overflow:hidden;display:flex;flex-direction:column;opacity:${isInactive ? 0.6 : 1}">
+      <div style="background:var(--navy3);padding:18px 18px 14px;display:flex;align-items:center;gap:14px;border-bottom:1px solid var(--navy4)">
         ${photoHtml}
         <div style="flex:1;min-width:0">
-          <div style="font-weight:700;font-size:15px;color:#f9fafb;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${emp.name || '—'}</div>
-          <div style="font-size:12px;color:#d4a843;margin-top:3px">${emp.role || 'Staff'}</div>
-          <span style="display:inline-block;margin-top:5px;font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;background:${isInactive ? '#2a2a2a' : '#0d2a1a'};color:${isInactive ? '#888' : '#4caf50'}">${isInactive ? 'Inactive' : 'Active'}</span>
+          <div style="font-weight:700;font-size:15px;color:var(--white);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${emp.name || '—'}</div>
+          <div style="font-size:12px;color:var(--gold);margin-top:2px;font-weight:600">${emp.role || 'Staff'}</div>
+          <span style="display:inline-block;margin-top:6px;font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:.04em;background:${isInactive ? 'rgba(100,100,100,.15)' : 'rgba(74,222,128,.12)'};color:${isInactive ? '#888' : '#4ade80'};border:1px solid ${isInactive ? 'rgba(100,100,100,.3)' : 'rgba(74,222,128,.25)'}">${isInactive ? '⛔ Inactive' : '✅ Active'}</span>
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        <div style="background:#0b1120;border-radius:8px;padding:10px 12px">
-          <div style="font-size:10px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">Phone</div>
-          <div style="font-size:13px;color:#f9fafb;font-weight:600">${emp.phone || '—'}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--navy4)">
+        <div style="padding:12px 14px;border-right:1px solid var(--navy4)">
+          <div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px">📞 Phone</div>
+          <div style="font-size:13px;color:var(--white);font-weight:600">${emp.phone || '—'}</div>
         </div>
-        <div style="background:#0b1120;border-radius:8px;padding:10px 12px">
-          <div style="font-size:10px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">Rate</div>
-          <div style="font-size:15px;color:#d4a843;font-weight:800">${emp.commission_rate || 0}%</div>
+        <div style="padding:12px 14px">
+          <div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px">📊 Rate</div>
+          <div style="font-size:18px;color:var(--gold);font-weight:800">${emp.commission_rate || 0}%</div>
         </div>
       </div>
-      ${earnedBadge}
-      <div style="display:flex;gap:8px">
-        <button onclick="openEmpModal('${emp.id}')" style="flex:1;padding:9px;border-radius:8px;background:#1f2937;color:#f9fafb;border:1px solid #374151;font-size:12px;font-weight:600;cursor:pointer">✏️ Edit</button>
-        <button onclick="deleteEmployee('${emp.id}','${(emp.name||'').replace(/'/g,'\u0027')}')" style="flex:1;padding:9px;border-radius:8px;background:#1f2937;color:#ef4444;border:1px solid #374151;font-size:12px;font-weight:600;cursor:pointer">🗑️ Remove</button>
+      <div style="padding:14px">
+        ${earnedBadge}
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--navy4)">
+        <button onclick="openEmpModal('${emp.id}')" style="padding:11px;background:transparent;color:var(--gray);border:none;border-right:1px solid var(--navy4);font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--gray)'">✏️ Edit</button>
+        <button onclick="deleteEmployee('${emp.id}','${(emp.name||'').replace(/'/g,''')}')" style="padding:11px;background:transparent;color:var(--gray);border:none;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='var(--gray)'">🗑️ Remove</button>
       </div>
     </div>`;
   }).join('');
