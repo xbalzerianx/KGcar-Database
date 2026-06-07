@@ -2249,7 +2249,8 @@ function exportCSV(type) {
   if(!rows.length){ toast('No data in selected period','err'); return; }
 
   const escape = v => `"${String(v).replace(/"/g,'""')}"`;
-  const csv = [header, ...rows].map(r=>r.map(escape).join(',')).join('\n');
+  const csv = [header, ...rows].map(r=>r.map(escape).join(',')).join('
+');
   const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -2496,7 +2497,7 @@ function renderCatMgr(){
     const cnt = counts[c.name]||0;
     return `<div style="display:flex;align-items:center;justify-content:space-between;background:#151c2c;border:1px solid #2a3347;border-radius:8px;padding:10px 14px">
       <span style="color:#e8e0d5;font-size:14px">🏷️ ${c.name} <span style="color:#8a8fa8;font-size:12px">(${cnt} product${cnt!==1?'s':''})</span></span>
-      <button onclick="removeCategory('${c.id}','${c.name.replace(/'/g,"\'")}')"
+      <button onclick="removeCategory('${c.id}','${c.name.replace(/'/g,"'")}')"
         style="background:transparent;border:1px solid #c0392b;color:#c0392b;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer">🗑️ Remove</button>
     </div>`;
   }).join('');
@@ -3429,7 +3430,7 @@ function _renderEmpGrid(commMap) {
       ${earnedBadge}
       <div style="display:flex;gap:8px">
         <button onclick="openEmpModal('${emp.id}')" style="flex:1;padding:9px;border-radius:8px;background:#1f2937;color:#f9fafb;border:1px solid #374151;font-size:12px;font-weight:600;cursor:pointer">✏️ Edit</button>
-        <button onclick="deleteEmployee('${emp.id}','${(emp.name||'').replace(/'/g,'\u0027')}')" style="flex:1;padding:9px;border-radius:8px;background:#1f2937;color:#ef4444;border:1px solid #374151;font-size:12px;font-weight:600;cursor:pointer">🗑️ Remove</button>
+        <button onclick="deleteEmployee('${emp.id}','${(emp.name||'').replace(/'/g,''')}')" style="flex:1;padding:9px;border-radius:8px;background:#1f2937;color:#ef4444;border:1px solid #374151;font-size:12px;font-weight:600;cursor:pointer">🗑️ Remove</button>
       </div>
     </div>`;
   }).join('');
