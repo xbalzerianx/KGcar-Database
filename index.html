@@ -2146,7 +2146,8 @@ function pickProd(id){
   document.getElementById('saleQ').value=selProd.product_name;
   document.getElementById('saleResults').style.display='none';
   document.getElementById('selName').textContent=selProd.product_name;
-  document.getElementById('selMeta').textContent=`${selProd.brand||''} · ${selProd.category} · ${peso(selProd.unit_price)}/${selProd.unit||'pcs'} · ${selProd.stock_qty} in stock`;
+  const _dispPrice = selProd.markup_price&&selProd.markup_price>0?selProd.markup_price:selProd.unit_price;
+  document.getElementById('selMeta').textContent=`${selProd.brand||''} · ${selProd.category} · ${peso(_dispPrice)}/${selProd.unit||'pcs'} · ${selProd.stock_qty} in stock`;
   document.getElementById('selProdBox').style.display='block';
   document.getElementById('saleHint').textContent=`Available: ${selProd.stock_qty} ${selProd.unit||'pcs'}`;
   calcTotal();
@@ -2155,7 +2156,7 @@ function quickSell(id){go('sale');setTimeout(()=>pickProd(id),50);}
 function calcTotal(){
   if(!selProd)return;
   const q=parseInt(document.getElementById('saleQty').value)||0;
-  document.getElementById('saleTot').value=q>0?peso(q*selProd.unit_price):'';
+  const _p=selProd.markup_price&&selProd.markup_price>0?selProd.markup_price:selProd.unit_price; document.getElementById('saleTot').value=q>0?peso(q*_p):'';
 }
 async function doSale(){
   if(!selProd){toast('Select a product first','err');return;}
@@ -2172,8 +2173,8 @@ async function doSale(){
       product_name:selProd.product_name,
       category:selProd.category,
       qty_sold:qty,
-      unit_price:selProd.unit_price,
-      sale_total:qty*selProd.unit_price,
+      unit_price:selProd.markup_price&&selProd.markup_price>0?selProd.markup_price:selProd.unit_price,
+      sale_total:qty*(selProd.markup_price&&selProd.markup_price>0?selProd.markup_price:selProd.unit_price),
       recorded_by:curUser?.name||'Admin',
       notes:document.getElementById('saleNote').value,
       sale_date:document.getElementById('saleDate').value,
@@ -2181,8 +2182,9 @@ async function doSale(){
     const newStock = selProd.stock_qty - qty;
     await apiPut('KGProduct', selProd.id, {stock_qty: newStock});
     await apiPost('KGSale', saleData);
-    await logActivity('sale', selProd.product_name, `Sold ${qty}x @ ${peso(selProd.unit_price)} = ${peso(qty*selProd.unit_price)}`);
-    toast(`✅ ${qty}x ${selProd.product_name} — ${peso(qty*selProd.unit_price)}`,'ok');
+    const _fp=selProd.markup_price&&selProd.markup_price>0?selProd.markup_price:selProd.unit_price;
+    await logActivity('sale', selProd.product_name, `Sold ${qty}x @ ${peso(_fp)} = ${peso(qty*_fp)}`);
+    toast(`✅ ${qty}x ${selProd.product_name} — ${peso(qty*_fp)}`,'ok');
     // Update local products array immediately so inventory reflects new stock
     const pIdx = products.findIndex(p => p.id === selProd.id);
     if (pIdx > -1) products[pIdx].stock_qty = newStock;
@@ -2262,8 +2264,7 @@ function exportCSV(type) {
   if(!rows.length){ toast('No data in selected period','err'); return; }
 
   const escape = v => `"${String(v).replace(/"/g,'""')}"`;
-  const csv = [header, ...rows].map(r=>r.map(escape).join(',')).join('
-');
+  const csv = [header, ...rows].map(r=>r.map(escape).join(',')).join('\n');
   const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -2563,7 +2564,7 @@ function renderCatMgr(){
     const cnt = counts[c.name]||0;
     return `<div style="display:flex;align-items:center;justify-content:space-between;background:#151c2c;border:1px solid #2a3347;border-radius:8px;padding:10px 14px">
       <span style="color:#e8e0d5;font-size:14px">🏷️ ${c.name} <span style="color:#8a8fa8;font-size:12px">(${cnt} product${cnt!==1?'s':''})</span></span>
-      <button onclick="removeCategory('${c.id}','${c.name.replace(/'/g,"'")}')"
+      <button onclick="removeCategory('${c.id}','${c.name.replace(/'/g,"\'")}')"
         style="background:transparent;border:1px solid #c0392b;color:#c0392b;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer">🗑️ Remove</button>
     </div>`;
   }).join('');
