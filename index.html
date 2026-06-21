@@ -1594,7 +1594,7 @@ function getFilteredExpensesForDash(){
     if(!d) return false;
     if(curFilter==='today') return d===todayStr;
     if(curFilter==='yesterday') return d===yestStr;
-    if(curFilter==='week'){const day=new Date(now);day.setDate(day.getDate()-6);return d>=day.toISOString().substring(0,10)&&d<=todayStr;}
+    if(curFilter==='week'){const _d=new Date(now);_d.setDate(_d.getDate()-6);const _dp=new Date(_d.toLocaleString('en-US',{timeZone:'Asia/Manila'}));const _ds=_dp.getFullYear()+'-'+String(_dp.getMonth()+1).padStart(2,'0')+'-'+String(_dp.getDate()).padStart(2,'0');return d>=_ds&&d<=todayStr;}
     if(curFilter==='month') return d.startsWith(todayStr.slice(0,7));
     if(curFilter==='all') return true;
     if(curFilter==='custom') return(!filterFrom||d>=filterFrom)&&(!filterTo||d<=filterTo);
@@ -1613,8 +1613,10 @@ function getFilteredSales(){
     if(curFilter==='today') return d===todayStr;
     if(curFilter==='yesterday') return d===yestStr;
     if(curFilter==='week'){
-      const day=new Date(now);day.setDate(day.getDate()-6);
-      return d>=day.toISOString().substring(0,10)&&d<=todayStr;
+      const _d=new Date(now);_d.setDate(_d.getDate()-6);
+      const _dp=new Date(_d.toLocaleString('en-US',{timeZone:'Asia/Manila'}));
+      const _ds=_dp.getFullYear()+'-'+String(_dp.getMonth()+1).padStart(2,'0')+'-'+String(_dp.getDate()).padStart(2,'0');
+      return d>=_ds&&d<=todayStr;
     }
     if(curFilter==='month') return d.startsWith(todayStr.slice(0,7));
     if(curFilter==='all') return true;
@@ -2218,8 +2220,8 @@ function exportCSV(type) {
     if (!d) return false;
     const ds=d.substring(0,10);
     if (period==='today') return ds===todayStr;
-    if (period==='yesterday'){const y=new Date(now);y.setDate(y.getDate()-1);return ds===y.toISOString().substring(0,10);}
-    if (period==='week'){const s=new Date(now);s.setDate(s.getDate()-6);return ds>=s.toISOString().substring(0,10)&&ds<=todayStr;}
+    if (period==='yesterday'){const _y=new Date(now);_y.setDate(_y.getDate()-1);const _yp=new Date(_y.toLocaleString('en-US',{timeZone:'Asia/Manila'}));const _ys=_yp.getFullYear()+'-'+String(_yp.getMonth()+1).padStart(2,'0')+'-'+String(_yp.getDate()).padStart(2,'0');return ds===_ys;}
+    if (period==='week'){const _s=new Date(now);_s.setDate(_s.getDate()-6);const _sp=new Date(_s.toLocaleString('en-US',{timeZone:'Asia/Manila'}));const _ss=_sp.getFullYear()+'-'+String(_sp.getMonth()+1).padStart(2,'0')+'-'+String(_sp.getDate()).padStart(2,'0');return ds>=_ss&&ds<=todayStr;}
     if (period==='month')  return ds.startsWith(todayStr.slice(0,7));
     if (period==='custom') return (!from||ds>=from) && (!to||ds<=to);
     return true; // all
@@ -2293,14 +2295,16 @@ function renderSL(){
     const ds=d.substring(0,10);
     if(period==='today') return ds===todayStr;
     if(period==='yesterday'){
-      const y=new Date(now);y.setDate(y.getDate()-1);
-      const ys=y.toISOString().substring(0,10);
-      return ds===ys;
+      const _y=new Date(now);_y.setDate(_y.getDate()-1);
+      const _yp=new Date(_y.toLocaleString('en-US',{timeZone:'Asia/Manila'}));
+      const _ys=_yp.getFullYear()+'-'+String(_yp.getMonth()+1).padStart(2,'0')+'-'+String(_yp.getDate()).padStart(2,'0');
+      return ds===_ys;
     }
     if(period==='week'){
-      const s=new Date(now);s.setDate(s.getDate()-6);
-      const ss=s.toISOString().substring(0,10);
-      return ds>=ss&&ds<=todayStr;
+      const _s=new Date(now);_s.setDate(_s.getDate()-6);
+      const _sp=new Date(_s.toLocaleString('en-US',{timeZone:'Asia/Manila'}));
+      const _ss=_sp.getFullYear()+'-'+String(_sp.getMonth()+1).padStart(2,'0')+'-'+String(_sp.getDate()).padStart(2,'0');
+      return ds>=_ss&&ds<=todayStr;
     }
     if(period==='month') return ds.startsWith(todayStr.slice(0,7));
     if(period==='custom') return (!from||ds>=from)&&(!to||ds<=to);
