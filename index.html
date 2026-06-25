@@ -797,6 +797,8 @@ tbody td{padding:13px 16px;vertical-align:middle}
           <div class="page-sub">Stock deducts automatically when you save</div>
         </div>
         <div style="max-width:580px;width:100%">
+
+          <!-- CARD 1: PRODUCT SALE -->
           <div class="card">
             <div class="card-hdr"><div><div class="card-title">📦 Select Product</div><div class="card-sub">Search by name, brand or product ID</div></div></div>
             <div class="fg" style="position:relative">
@@ -839,24 +841,28 @@ tbody td{padding:13px 16px;vertical-align:middle}
               </button>
             </div>
           </div>
-        </div>
 
-          <!-- MANUAL / FREE-FORM SALE CARD -->
-          <div class="card" style="margin-top:18px">
+          <!-- CARD 2: MANUAL / NO-PRODUCT SALE -->
+          <div class="card" style="margin-top:20px;border:1px solid rgba(212,168,67,0.25)">
             <div class="card-hdr">
               <div>
-                <div class="card-title">📝 Manual Sale (No Product)</div>
-                <div class="card-sub">Record a sale or transaction without selecting a product from inventory</div>
+                <div class="card-title">📝 Manual Sale <span style="font-size:11px;font-weight:500;color:var(--gray);letter-spacing:.5px;text-transform:uppercase;margin-left:6px">No Product</span></div>
+                <div class="card-sub">Record labour, service fees, or any transaction not tied to inventory</div>
               </div>
             </div>
+            <div class="divider"></div>
             <div class="form-grid" style="margin-bottom:0">
               <div class="fg full">
-                <label class="label">Description</label>
-                <input class="inp" type="text" id="manualDesc" placeholder="e.g. Labour fee, car wash, misc service…" autocomplete="off"/>
+                <label class="label">Description <span style="color:var(--red);margin-left:2px">*</span></label>
+                <input class="inp" type="text" id="manualDesc" placeholder="e.g. Labour fee, car wash, alignment service…" autocomplete="off" style="font-size:16px"/>
               </div>
               <div class="fg">
-                <label class="label">Amount (₱)</label>
-                <input class="inp" type="number" id="manualAmt" min="0" step="0.01" placeholder="0.00" style="color:var(--gold);font-weight:800;font-size:16px"/>
+                <label class="label">Amount (₱) <span style="color:var(--red);margin-left:2px">*</span></label>
+                <input class="inp" type="number" id="manualAmt" min="0" step="0.01" placeholder="0.00" style="color:var(--gold);font-weight:800;font-size:18px"/>
+              </div>
+              <div class="fg">
+                <label class="label">Recorded By</label>
+                <input class="inp" type="text" id="manualBy" readonly style="color:var(--gold)"/>
               </div>
               <div class="fg">
                 <label class="label">Sale Date</label>
@@ -864,7 +870,7 @@ tbody td{padding:13px 16px;vertical-align:middle}
               </div>
               <div class="fg full">
                 <label class="label">Notes (optional)</label>
-                <textarea class="ta" id="manualNote" placeholder="Customer name, invoice #, etc."></textarea>
+                <textarea class="ta" id="manualNote" placeholder="Customer name, invoice #, plate number, etc." style="min-height:70px"></textarea>
               </div>
             </div>
             <div class="mt20">
@@ -873,6 +879,7 @@ tbody td{padding:13px 16px;vertical-align:middle}
               </button>
             </div>
           </div>
+
         </div>
       </div>
 
@@ -909,6 +916,7 @@ tbody td{padding:13px 16px;vertical-align:middle}
             <option>Tires</option><option>Engine Oil</option><option>Brake Pads</option><option>Brake Oil</option>
             <option>Filters</option><option>Batteries</option><option>Wipers</option><option>Lights</option>
             <option>Belts & Hoses</option><option>Accessories</option>
+            <option>Manual Sale</option>
           </select>
           <select class="sel" id="slWho" onchange="renderSL()">
             <option value="">All Staff</option>
@@ -1352,6 +1360,7 @@ async function launchApp() {
   clock(); setInterval(clock,30000);
   document.getElementById('saleDate').value = today();
   const _md=document.getElementById('manualDate'); if(_md) _md.value=today();
+  const _mb=document.getElementById('manualBy'); if(_mb) _mb.value=curUser?.name||'Admin';
   await loadAll();
 }
 function logout() {
@@ -2163,6 +2172,7 @@ function resetSale(){
   // Reset manual sale fields
   ['manualDesc','manualAmt','manualNote'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   const md=document.getElementById('manualDate'); if(md) md.value=today();
+  const mb=document.getElementById('manualBy'); if(mb&&curUser) mb.value=curUser.name;
 }
 function saleSearch(){
   const q=document.getElementById('saleQ').value.toLowerCase().trim();
@@ -2255,7 +2265,7 @@ async function doManualSale(){
       qty_sold   : 1,
       unit_price : amt,
       sale_total : amt,
-      recorded_by: curUser?.name || 'Admin',
+      recorded_by: document.getElementById('manualBy')?.value || curUser?.name || 'Admin',
       notes      : note,
       sale_date  : date,
     };
