@@ -856,28 +856,8 @@ tbody td{padding:13px 16px;vertical-align:middle}
                 <input class="inp" type="text" id="manualName" placeholder="e.g. Labor - Alignment, Vulcanizing..." style="font-size:16px"/>
               </div>
               <div class="fg">
-                <label class="label">Category</label>
-                <select class="sel inp" id="manualCat" style="font-size:16px">
-                  <option value="Manual Sale">Manual Sale</option>
-                  <option value="Labor">Labor</option>
-                  <option value="Service">Service</option>
-                  <option value="Tires">Tires</option>
-                  <option value="Engine Oil">Engine Oil</option>
-                  <option value="Accessories">Accessories</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-              <div class="fg">
-                <label class="label">Unit Price (PHP)</label>
-                <input class="inp" type="number" id="manualPrice" min="0" placeholder="0.00" oninput="calcManualTotal()" style="font-size:16px"/>
-              </div>
-              <div class="fg">
-                <label class="label">Quantity</label>
-                <input class="inp" type="number" id="manualQty" min="1" value="1" oninput="calcManualTotal()" style="font-size:16px"/>
-              </div>
-              <div class="fg">
-                <label class="label">Sale Total</label>
-                <input class="inp" type="text" id="manualTot" readonly style="color:var(--gold);font-weight:800;font-size:16px"/>
+                <label class="label">Amount (PHP)</label>
+                <input class="inp" type="number" id="manualPrice" min="0" placeholder="0.00" style="font-size:16px"/>
               </div>
               <div class="fg">
                 <label class="label">Sale Date</label>
@@ -2377,25 +2357,14 @@ function switchSaleTab(tab){
   }
 }
 
-function calcManualTotal(){
-  const price = parseFloat(document.getElementById('manualPrice')?.value)||0;
-  const qty   = parseFloat(document.getElementById('manualQty')?.value)||1;
-  const tot   = price * qty;
-  const el    = document.getElementById('manualTot');
-  if(el) el.value = tot > 0 ? peso(tot) : '';
-}
-
 async function doManualSale(){
   const name  = (document.getElementById('manualName')?.value||'').trim();
   const price = parseFloat(document.getElementById('manualPrice')?.value)||0;
-  const qty   = parseFloat(document.getElementById('manualQty')?.value)||1;
-  const cat   = document.getElementById('manualCat')?.value||'Manual Sale';
   const note  = document.getElementById('manualNote')?.value||'';
   const date  = document.getElementById('manualDate')?.value||today();
 
   if(!name){toast('Enter a product/service name','err');return;}
-  if(price<=0){toast('Enter a valid unit price','err');return;}
-  if(qty<=0){toast('Enter a valid quantity','err');return;}
+  if(price<=0){toast('Enter a valid amount','err');return;}
 
   const btn=document.getElementById('manualBtn');
   btn.disabled=true;btn.textContent='Processing...';
@@ -2405,22 +2374,20 @@ async function doManualSale(){
       sale_id:saleId,
       product_id:'MANUAL',
       product_name:name,
-      category:cat,
-      qty_sold:qty,
+      category:'Manual Sale',
+      qty_sold:1,
       unit_price:price,
-      sale_total:price*qty,
+      sale_total:price,
       recorded_by:curUser?.name||'Admin',
       notes:note,
       sale_date:date
     };
     await apiPost('KGSale', saleData);
-    await logActivity('sale', name, `Manual sale: ${qty}x ${name} @ ${peso(price)} = ${peso(price*qty)}`);
-    toast('Manual sale recorded: '+peso(price*qty),'ok');
+    await logActivity('sale', name, `Manual sale: ${name} = ${peso(price)}`);
+    toast('Manual sale recorded: '+peso(price),'ok');
     // Reset form
     document.getElementById('manualName').value='';
     document.getElementById('manualPrice').value='';
-    document.getElementById('manualQty').value='1';
-    document.getElementById('manualTot').value='';
     document.getElementById('manualNote').value='';
     // Refresh sales
     sales = await apiGet('KGSale').catch(()=>sales);
