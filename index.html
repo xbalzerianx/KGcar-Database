@@ -2416,7 +2416,7 @@ function renderSL(){
     <td class="tbl-col-hide"><span class="badge b-cat">${s.category||'—'}</span></td>
     <td class="fw7">${num(s.qty_sold)}</td>
     <td class="num tbl-col-hide">${peso(s.unit_price)}</td>
-    <td class="num text-gold fw7">${peso((()=>{const _p=products.find(p=>p.product_id===s.product_id||p.product_name===s.product_name);const mu=_p&&_p.markup_price&&_p.markup_price>0?_p.markup_price:s.unit_price;return (mu||0)*(s.qty_sold||0);})())}</td>
+    <td class="num text-gold fw7">${peso((s.unit_price||0)*(s.qty_sold||0))}</td>
     <td class="tbl-col-hide"><span class="badge ${s.recorded_by==='Admin'?'b-admin':'b-asst'}">${s.recorded_by||'Admin'}</span></td></tr>`).join('')
     ||`<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--gray)">No sales recorded yet</td></tr>`;
   document.getElementById('slFooter').innerHTML=list.length?`${list.length} transactions · Total: <span class="num text-gold fw7" style="font-size:15px">${peso(tot)}</span>`:'';
