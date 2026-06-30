@@ -797,11 +797,18 @@ tbody td{padding:13px 16px;vertical-align:middle}
           <div class="page-sub">Stock deducts automatically when you save</div>
         </div>
         <div style="max-width:580px;width:100%">
-          <div class="card">
+          <!-- Sale Type Tabs -->
+          <div style="display:flex;gap:0;margin-bottom:16px;border-radius:10px;overflow:hidden;border:1px solid var(--border)">
+            <button id="tabRegular" onclick="switchSaleTab('regular')" style="flex:1;padding:11px 0;font-size:13px;font-weight:700;border:none;cursor:pointer;background:var(--gold);color:#1a1a1a;transition:all .2s">📦 Regular Sale</button>
+            <button id="tabManual" onclick="switchSaleTab('manual')" style="flex:1;padding:11px 0;font-size:13px;font-weight:700;border:none;cursor:pointer;background:var(--card);color:var(--gray);transition:all .2s">&#9998; Manual Sale</button>
+          </div>
+
+          <!-- REGULAR SALE CARD -->
+          <div id="saleCardRegular" class="card">
             <div class="card-hdr"><div><div class="card-title">📦 Select Product</div><div class="card-sub">Search by name, brand or product ID</div></div></div>
             <div class="fg" style="position:relative">
               <label class="label">Search Product</label>
-              <input class="inp" type="text" id="saleQ" placeholder="e.g. Castrol, Brake Pad, PRD-007…" oninput="saleSearch()" autocomplete="off"/>
+              <input class="inp" type="text" id="saleQ" placeholder="e.g. Castrol, Brake Pad, PRD-007..." oninput="saleSearch()" autocomplete="off"/>
               <div class="prod-results" id="saleResults" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:200;max-height:200px;overflow-y:auto"></div>
               <div class="sel-prod-box" id="selProdBox" style="display:none;margin-top:8px">
                 <div class="fs11 text-gray" style="margin-bottom:6px">Selected Product</div>
@@ -835,7 +842,59 @@ tbody td{padding:13px 16px;vertical-align:middle}
             </div>
             <div class="mt20">
               <button class="btn btn-gold" id="saleBtn" style="width:100%;justify-content:center;padding:14px;font-size:14px" onclick="doSale()">
-                💰 Confirm Sale & Update Stock
+                &#128176; Confirm Sale &amp; Update Stock
+              </button>
+            </div>
+          </div>
+
+          <!-- MANUAL SALE CARD -->
+          <div id="saleCardManual" class="card" style="display:none">
+            <div class="card-hdr"><div><div class="card-title">&#9998; Manual Sale</div><div class="card-sub">Record a sale without a product in inventory — labor, services, etc.</div></div></div>
+            <div class="form-grid" style="margin-bottom:0">
+              <div class="fg full">
+                <label class="label">Product / Service Name</label>
+                <input class="inp" type="text" id="manualName" placeholder="e.g. Labor - Alignment, Vulcanizing..." style="font-size:16px"/>
+              </div>
+              <div class="fg">
+                <label class="label">Category</label>
+                <select class="sel inp" id="manualCat" style="font-size:16px">
+                  <option value="Manual Sale">Manual Sale</option>
+                  <option value="Labor">Labor</option>
+                  <option value="Service">Service</option>
+                  <option value="Tires">Tires</option>
+                  <option value="Engine Oil">Engine Oil</option>
+                  <option value="Accessories">Accessories</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div class="fg">
+                <label class="label">Unit Price (PHP)</label>
+                <input class="inp" type="number" id="manualPrice" min="0" placeholder="0.00" oninput="calcManualTotal()" style="font-size:16px"/>
+              </div>
+              <div class="fg">
+                <label class="label">Quantity</label>
+                <input class="inp" type="number" id="manualQty" min="1" value="1" oninput="calcManualTotal()" style="font-size:16px"/>
+              </div>
+              <div class="fg">
+                <label class="label">Sale Total</label>
+                <input class="inp" type="text" id="manualTot" readonly style="color:var(--gold);font-weight:800;font-size:16px"/>
+              </div>
+              <div class="fg">
+                <label class="label">Sale Date</label>
+                <input class="inp" type="date" id="manualDate" style="font-size:16px"/>
+              </div>
+              <div class="fg">
+                <label class="label">Recorded By</label>
+                <input class="inp" type="text" id="manualBy" readonly style="color:var(--gold);font-size:16px"/>
+              </div>
+              <div class="fg full">
+                <label class="label">Notes (optional)</label>
+                <textarea class="ta" id="manualNote" placeholder="Customer name, invoice #, etc." style="font-size:16px"></textarea>
+              </div>
+            </div>
+            <div class="mt20">
+              <button class="btn btn-gold" id="manualBtn" style="width:100%;justify-content:center;padding:14px;font-size:14px" onclick="doManualSale()">
+                &#9998; Confirm Manual Sale
               </button>
             </div>
           </div>
@@ -2218,12 +2277,17 @@ function renderActLog(){
 // ═══════════════════ SALE ═══════════════════
 function resetSale(){
   selProd=null;
-  ['saleQ','saleQty','saleTot','saleNote'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('saleDate').value=today();
-  if(curUser) document.getElementById('saleBy').value=curUser.name;
-  document.getElementById('saleResults').style.display='none';
-  document.getElementById('selProdBox').style.display='none';
-  document.getElementById('saleHint').textContent='';
+  ['saleQ','saleQty','saleTot','saleNote'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  const sd=document.getElementById('saleDate'); if(sd) sd.value=today();
+  if(curUser){ const sb=document.getElementById('saleBy'); if(sb) sb.value=curUser.name; }
+  const sr=document.getElementById('saleResults'); if(sr) sr.style.display='none';
+  const sp=document.getElementById('selProdBox'); if(sp) sp.style.display='none';
+  const sh=document.getElementById('saleHint'); if(sh) sh.textContent='';
+  // Reset manual sale form too
+  const md=document.getElementById('manualDate'); if(md) md.value=today();
+  const mb=document.getElementById('manualBy'); if(mb&&curUser) mb.value=curUser.name;
+  // Always start on Regular tab
+  switchSaleTab('regular');
 }
 function saleSearch(){
   const q=document.getElementById('saleQ').value.toLowerCase().trim();
@@ -2293,6 +2357,78 @@ async function doSale(){
     go('saleslog');
   } catch(e){toast('Failed: '+e.message,'err');}
   finally{btn.disabled=false;btn.textContent='💰 Confirm Sale & Update Stock';}
+}
+
+// ═══════════════════ SALE TAB SWITCH ═══════════════════
+function switchSaleTab(tab){
+  const isRegular = tab === 'regular';
+  document.getElementById('saleCardRegular').style.display = isRegular ? '' : 'none';
+  document.getElementById('saleCardManual').style.display  = isRegular ? 'none' : '';
+  document.getElementById('tabRegular').style.background = isRegular ? 'var(--gold)' : 'var(--card)';
+  document.getElementById('tabRegular').style.color      = isRegular ? '#1a1a1a' : 'var(--gray)';
+  document.getElementById('tabManual').style.background  = isRegular ? 'var(--card)' : 'var(--gold)';
+  document.getElementById('tabManual').style.color       = isRegular ? 'var(--gray)' : '#1a1a1a';
+  if(!isRegular){
+    // Pre-fill date and recorded by for manual form
+    const d=document.getElementById('manualDate');
+    if(d&&!d.value) d.value=today();
+    const b=document.getElementById('manualBy');
+    if(b) b.value=curUser?.name||'Admin';
+  }
+}
+
+function calcManualTotal(){
+  const price = parseFloat(document.getElementById('manualPrice')?.value)||0;
+  const qty   = parseFloat(document.getElementById('manualQty')?.value)||1;
+  const tot   = price * qty;
+  const el    = document.getElementById('manualTot');
+  if(el) el.value = tot > 0 ? peso(tot) : '';
+}
+
+async function doManualSale(){
+  const name  = (document.getElementById('manualName')?.value||'').trim();
+  const price = parseFloat(document.getElementById('manualPrice')?.value)||0;
+  const qty   = parseFloat(document.getElementById('manualQty')?.value)||1;
+  const cat   = document.getElementById('manualCat')?.value||'Manual Sale';
+  const note  = document.getElementById('manualNote')?.value||'';
+  const date  = document.getElementById('manualDate')?.value||today();
+
+  if(!name){toast('Enter a product/service name','err');return;}
+  if(price<=0){toast('Enter a valid unit price','err');return;}
+  if(qty<=0){toast('Enter a valid quantity','err');return;}
+
+  const btn=document.getElementById('manualBtn');
+  btn.disabled=true;btn.textContent='Processing...';
+  try{
+    const saleId=genSaleId();
+    const saleData={
+      sale_id:saleId,
+      product_id:'MANUAL',
+      product_name:name,
+      category:cat,
+      qty_sold:qty,
+      unit_price:price,
+      sale_total:price*qty,
+      recorded_by:curUser?.name||'Admin',
+      notes:note,
+      sale_date:date
+    };
+    await apiPost('KGSale', saleData);
+    await logActivity('sale', name, `Manual sale: ${qty}x ${name} @ ${peso(price)} = ${peso(price*qty)}`);
+    toast('Manual sale recorded: '+peso(price*qty),'ok');
+    // Reset form
+    document.getElementById('manualName').value='';
+    document.getElementById('manualPrice').value='';
+    document.getElementById('manualQty').value='1';
+    document.getElementById('manualTot').value='';
+    document.getElementById('manualNote').value='';
+    // Refresh sales
+    sales = await apiGet('KGSale').catch(()=>sales);
+    sales.forEach(s=>{ if(s.created_date&&s.created_date.includes('T')&&!s.created_date.endsWith('Z')&&!s.created_date.includes('+')) s.created_date+='Z'; });
+    sales.sort((a,b)=>new Date(b.created_date||0)-new Date(a.created_date||0));
+    go('saleslog');
+  }catch(e){toast('Failed: '+e.message,'err');}
+  finally{btn.disabled=false;btn.textContent='✏️ Confirm Manual Sale';}
 }
 
 // ═══════════════════ SALES LOG ═══════════════════
