@@ -760,7 +760,7 @@ tbody td{padding:13px 16px;vertical-align:middle}
         <div class="page-hdr">
           <div class="page-hdr-row">
             <div><div class="page-title">Products & Inventory</div><div class="page-sub">Manage your catalog and stock levels</div></div>
-            <button class="btn btn-gold" onclick="openAdd()">+ Add Product</button>
+            <button id="addProductBtn" class="btn btn-gold" onclick="openAdd()">+ Add Product</button>
           </div>
         </div>
         <div class="toolbar">
@@ -797,8 +797,6 @@ tbody td{padding:13px 16px;vertical-align:middle}
           <div class="page-sub">Stock deducts automatically when you save</div>
         </div>
         <div style="max-width:580px;width:100%">
-
-          <!-- CARD 1: PRODUCT SALE -->
           <div class="card">
             <div class="card-hdr"><div><div class="card-title">📦 Select Product</div><div class="card-sub">Search by name, brand or product ID</div></div></div>
             <div class="fg" style="position:relative">
@@ -841,45 +839,6 @@ tbody td{padding:13px 16px;vertical-align:middle}
               </button>
             </div>
           </div>
-
-          <!-- CARD 2: MANUAL / NO-PRODUCT SALE -->
-          <div class="card" style="margin-top:20px;border:1px solid rgba(212,168,67,0.25)">
-            <div class="card-hdr">
-              <div>
-                <div class="card-title">📝 Manual Sale <span style="font-size:11px;font-weight:500;color:var(--gray);letter-spacing:.5px;text-transform:uppercase;margin-left:6px">No Product</span></div>
-                <div class="card-sub">Record labour, service fees, or any transaction not tied to inventory</div>
-              </div>
-            </div>
-            <div class="divider"></div>
-            <div class="form-grid" style="margin-bottom:0">
-              <div class="fg full">
-                <label class="label">Description <span style="color:var(--red);margin-left:2px">*</span></label>
-                <input class="inp" type="text" id="manualDesc" placeholder="e.g. Labour fee, car wash, alignment service…" autocomplete="off" style="font-size:16px"/>
-              </div>
-              <div class="fg">
-                <label class="label">Amount (₱) <span style="color:var(--red);margin-left:2px">*</span></label>
-                <input class="inp" type="number" id="manualAmt" min="0" step="0.01" placeholder="0.00" style="color:var(--gold);font-weight:800;font-size:18px"/>
-              </div>
-              <div class="fg">
-                <label class="label">Recorded By</label>
-                <input class="inp" type="text" id="manualBy" readonly style="color:var(--gold)"/>
-              </div>
-              <div class="fg">
-                <label class="label">Sale Date</label>
-                <input class="inp" type="date" id="manualDate"/>
-              </div>
-              <div class="fg full">
-                <label class="label">Notes (optional)</label>
-                <textarea class="ta" id="manualNote" placeholder="Customer name, invoice #, plate number, etc." style="min-height:70px"></textarea>
-              </div>
-            </div>
-            <div class="mt20">
-              <button class="btn btn-gold" id="manualSaleBtn" style="width:100%;justify-content:center;padding:14px;font-size:14px" onclick="doManualSale()">
-                💰 Save Manual Sale
-              </button>
-            </div>
-          </div>
-
         </div>
       </div>
 
@@ -916,7 +875,6 @@ tbody td{padding:13px 16px;vertical-align:middle}
             <option>Tires</option><option>Engine Oil</option><option>Brake Pads</option><option>Brake Oil</option>
             <option>Filters</option><option>Batteries</option><option>Wipers</option><option>Lights</option>
             <option>Belts & Hoses</option><option>Accessories</option>
-            <option>Manual Sale</option>
           </select>
           <select class="sel" id="slWho" onchange="renderSL()">
             <option value="">All Staff</option>
@@ -964,7 +922,7 @@ tbody td{padding:13px 16px;vertical-align:middle}
         <div class="page-hdr">
           <div class="page-hdr-row">
             <div><div class="page-title">Expenses</div><div class="page-sub">Track daily business expenses</div></div>
-            <button class="btn btn-gold" onclick="openAddExpense()">+ Add Expense</button>
+            <button id="addExpenseBtn" class="btn btn-gold" onclick="openAddExpense()">+ Add Expense</button>
           </div>
         </div>
         <div class="toolbar">
@@ -1030,7 +988,7 @@ tbody td{padding:13px 16px;vertical-align:middle}
             <button class="wo-filter-btn" data-filter="completed" onclick="setWOFilter('completed',this)">Completed</button>
             <button class="wo-filter-btn" data-filter="all" onclick="setWOFilter('all',this)">All</button>
           </div>
-          <button class="btn btn-primary" onclick="openNewWO()">+ New Work Order</button>
+          <button id="addWOBtn" class="btn btn-primary" onclick="openNewWO()">+ New Work Order</button>
         </div>
         <div id="woListWrap">
           <div style="text-align:center;padding:40px;color:#8a8fa8">Loading work orders…</div>
@@ -1277,7 +1235,7 @@ async function apiDel(e,id){
   return {};
 }
 
-const DEFAULT_PINS = { admin:'070726', asst:'000000' };
+const DEFAULT_PINS = { admin:'070726', asst:'5678' };
 function getPins(){
   try {
     const s=localStorage.getItem('kgcar_pins');
@@ -1357,10 +1315,12 @@ async function launchApp() {
   if(catMgrBtn) catMgrBtn.style.display=curUser.role==='admin'?'flex':'none';
   const mobCatMgrBtn=document.getElementById('mobCatMgrBtn');
   if(mobCatMgrBtn) mobCatMgrBtn.style.display=curUser.role==='admin'?'flex':'none';
+  // ── Assistant lock-out: hide Add buttons ──
+  const isAdmin = curUser.role==='admin';
+  const _addBtns = ['addProductBtn','addExpenseBtn','addWOBtn'];
+  _addBtns.forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display=isAdmin?'':'none'; });
   clock(); setInterval(clock,30000);
   document.getElementById('saleDate').value = today();
-  const _md=document.getElementById('manualDate'); if(_md) _md.value=today();
-  const _mb=document.getElementById('manualBy'); if(_mb) _mb.value=curUser?.name||'Admin';
   await loadAll();
 }
 function logout() {
@@ -1369,6 +1329,54 @@ function logout() {
   document.getElementById('mobNav') && document.getElementById('mobNav').classList.remove('show');
   document.getElementById('loginWrap').style.display='flex';
   cancelLogin();
+}
+
+
+// ═══════════════ ASSISTANT REQUEST EDIT ═══════════════
+function requestEdit(type, id, label) {
+  if (curUser && curUser.role === 'admin') return; // Admin can edit directly
+  const typeLabel = type === 'product' ? 'Product' : type === 'workorder' ? 'Work Order' : type;
+  const msg = `📩 Edit Request\n\nEncoder "${curUser?.name||'Staff'}" is requesting to edit:\n\n${typeLabel}: "${label}"\n\nPlease review and make the necessary changes in the system.`;
+  // Show a modal-style toast with the message
+  showRequestEditModal(typeLabel, label);
+}
+
+function showRequestEditModal(typeLabel, label) {
+  // Remove existing if any
+  const existing = document.getElementById('reqEditOverlay');
+  if (existing) existing.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'reqEditOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  overlay.innerHTML = `
+    <div style="background:var(--navy2);border:1px solid var(--navy3);border-radius:16px;padding:32px;max-width:420px;width:100%;text-align:center">
+      <div style="font-size:36px;margin-bottom:12px">📩</div>
+      <div style="font-size:18px;font-weight:700;color:var(--white);margin-bottom:8px">Edit Request Sent</div>
+      <div style="font-size:13px;color:var(--gray);margin-bottom:20px;line-height:1.6">
+        You cannot edit <strong style="color:var(--white)">${label}</strong> directly.<br>
+        Your request has been logged. Please inform the <strong style="color:var(--gold)">Admin</strong> to make this change.
+      </div>
+      <div style="background:var(--navy3);border-radius:10px;padding:14px;margin-bottom:20px;text-align:left;font-size:12px;color:var(--gray)">
+        <div style="color:var(--gold);font-weight:600;margin-bottom:6px">📋 Request Details</div>
+        <div><strong>Encoder:</strong> ${curUser?.name||'Staff'}</div>
+        <div><strong>Item:</strong> ${label}</div>
+        <div><strong>Type:</strong> ${typeLabel}</div>
+        <div><strong>Time:</strong> ${new Date().toLocaleString('en-PH',{timeZone:'Asia/Manila'})}</div>
+      </div>
+      <button class="btn btn-gold" onclick="document.getElementById('reqEditOverlay').remove()" style="width:100%">OK, Got It</button>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if(e.target===overlay) overlay.remove(); });
+}
+
+// Guard: block add/edit functions for non-admin
+function _adminOnly(fn, label) {
+  if (!curUser || curUser.role !== 'admin') {
+    toast(\`🔒 Only Admin can \${label}\`, 'err');
+    return false;
+  }
+  return true;
 }
 
 // Load PINs from Supabase kg_settings table
@@ -1380,8 +1388,8 @@ async function loadPinsFromSupabase() {
     if (!rows.length) return;
     const pins = {...DEFAULT_PINS};
     rows.forEach(row => {
-      if (row.key === 'admin_pin' && row.value) pins.admin = row.value;
-      if (row.key === 'asst_pin' && row.value) pins.asst = row.value;
+      if ((row.key === 'pin_admin' || row.key === 'admin_pin') && row.value) pins.admin = row.value;
+      if ((row.key === 'pin_asst' || row.key === 'asst_pin') && row.value) pins.asst = row.value;
     });
     savePins(pins);
   } catch(e) {
@@ -1866,9 +1874,9 @@ function renderInv(){
       <td class="num fw7" style="color:var(--green)">${p.markup_price&&p.markup_price>0?peso((p.markup_price||0)*(p.stock_qty||0)):'—'}</td>
       <td>${badgeEl(p)}</td>
       <td><div class="flex gap8">
-        <button class="btn btn-ghost btn-xs" onclick="openEdit('${p.id}')">✏️ Edit</button>
+        ${curUser&&curUser.role==='admin'?`<button class="btn btn-ghost btn-xs" onclick="openEdit('${p.id}')">✏️ Edit</button>`:`<button class="btn btn-ghost btn-xs" onclick="requestEdit('product','${p.id}','${(p.product_name||'').replace(/'/g,\"'\")}')" title="Request admin to edit">📩 Request Edit</button>`}
         <button class="btn btn-gold btn-xs" onclick="quickSell('${p.id}')">💰 Sell</button>
-        <button class="btn btn-xs" style="background:var(--red2);color:var(--red);border:1px solid rgba(239,68,68,.3)" onclick="confirmDelete(this.getAttribute('data-pid'),this.getAttribute('data-pname'))" data-pid="${p.id}" data-pname="${p.product_name}">🗑️</button>
+        <button class="btn btn-xs" style="background:var(--red2);color:var(--red);border:1px solid rgba(239,68,68,.3)" ${curUser&&curUser.role==='admin'?`onclick="confirmDelete(this.getAttribute('data-pid')`:`onclick="toast('Only Admin can delete products','err')" disabled style="opacity:.4;cursor:not-allowed;background:var(--red2);color:var(--red);border:1px solid rgba(239,68,68,.3)" data-pid="!BLOCKED!"`},this.getAttribute('data-pname'))" data-pid="${p.id}" data-pname="${p.product_name}">🗑️</button>
       </div></td>
     </tr>`).join('')||`<tr><td colspan="8"><div class="empty"><div class="empty-icon">📦</div><div>No products found</div></div></td></tr>`;
   document.getElementById('invFooter').innerHTML='';
@@ -1904,6 +1912,7 @@ function pickTireSize(el,size){
   el.classList.add('active');
 }
 function openAdd(){
+  if(!_adminOnly('add','add products')) return;
   editId=null;
   refreshMCatSelect();
   document.getElementById('modalTitle').textContent='+ Add New Product';
@@ -1917,6 +1926,7 @@ function openAdd(){
   document.getElementById('prodModal').classList.add('open');
 }
 function openEdit(id){
+  if(!_adminOnly('edit','edit products')) return;
   const p=products.find(x=>x.id===id);if(!p)return;
   editId=id;
   refreshMCatSelect();
@@ -2169,10 +2179,6 @@ function resetSale(){
   document.getElementById('saleResults').style.display='none';
   document.getElementById('selProdBox').style.display='none';
   document.getElementById('saleHint').textContent='';
-  // Reset manual sale fields
-  ['manualDesc','manualAmt','manualNote'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
-  const md=document.getElementById('manualDate'); if(md) md.value=today();
-  const mb=document.getElementById('manualBy'); if(mb&&curUser) mb.value=curUser.name;
 }
 function saleSearch(){
   const q=document.getElementById('saleQ').value.toLowerCase().trim();
@@ -2194,8 +2200,7 @@ function pickProd(id){
   document.getElementById('saleQ').value=selProd.product_name;
   document.getElementById('saleResults').style.display='none';
   document.getElementById('selName').textContent=selProd.product_name;
-  const _dispPrice = selProd.markup_price&&selProd.markup_price>0?selProd.markup_price:selProd.unit_price;
-  document.getElementById('selMeta').textContent=`${selProd.brand||''} · ${selProd.category} · ${peso(_dispPrice)}/${selProd.unit||'pcs'} · ${selProd.stock_qty} in stock`;
+  document.getElementById('selMeta').textContent=`${selProd.brand||''} · ${selProd.category} · ${peso(selProd.unit_price)}/${selProd.unit||'pcs'} · ${selProd.stock_qty} in stock`;
   document.getElementById('selProdBox').style.display='block';
   document.getElementById('saleHint').textContent=`Available: ${selProd.stock_qty} ${selProd.unit||'pcs'}`;
   calcTotal();
@@ -2204,7 +2209,7 @@ function quickSell(id){go('sale');setTimeout(()=>pickProd(id),50);}
 function calcTotal(){
   if(!selProd)return;
   const q=parseInt(document.getElementById('saleQty').value)||0;
-  const _p=selProd.markup_price&&selProd.markup_price>0?selProd.markup_price:selProd.unit_price; document.getElementById('saleTot').value=q>0?peso(q*_p):'';
+  document.getElementById('saleTot').value=q>0?peso(q*selProd.unit_price):'';
 }
 async function doSale(){
   if(!selProd){toast('Select a product first','err');return;}
@@ -2221,8 +2226,8 @@ async function doSale(){
       product_name:selProd.product_name,
       category:selProd.category,
       qty_sold:qty,
-      unit_price:selProd.markup_price&&selProd.markup_price>0?selProd.markup_price:selProd.unit_price,
-      sale_total:qty*(selProd.markup_price&&selProd.markup_price>0?selProd.markup_price:selProd.unit_price),
+      unit_price:selProd.unit_price,
+      sale_total:qty*selProd.unit_price,
       recorded_by:curUser?.name||'Admin',
       notes:document.getElementById('saleNote').value,
       sale_date:document.getElementById('saleDate').value,
@@ -2230,9 +2235,8 @@ async function doSale(){
     const newStock = selProd.stock_qty - qty;
     await apiPut('KGProduct', selProd.id, {stock_qty: newStock});
     await apiPost('KGSale', saleData);
-    const _fp=selProd.markup_price&&selProd.markup_price>0?selProd.markup_price:selProd.unit_price;
-    await logActivity('sale', selProd.product_name, `Sold ${qty}x @ ${peso(_fp)} = ${peso(qty*_fp)}`);
-    toast(`✅ ${qty}x ${selProd.product_name} — ${peso(qty*_fp)}`,'ok');
+    await logActivity('sale', selProd.product_name, `Sold ${qty}x @ ${peso(selProd.unit_price)} = ${peso(qty*selProd.unit_price)}`);
+    toast(`✅ ${qty}x ${selProd.product_name} — ${peso(qty*selProd.unit_price)}`,'ok');
     // Update local products array immediately so inventory reflects new stock
     const pIdx = products.findIndex(p => p.id === selProd.id);
     if (pIdx > -1) products[pIdx].stock_qty = newStock;
@@ -2244,40 +2248,6 @@ async function doSale(){
     go('saleslog');
   } catch(e){toast('Failed: '+e.message,'err');}
   finally{btn.disabled=false;btn.textContent='💰 Confirm Sale & Update Stock';}
-}
-
-async function doManualSale(){
-  const desc = document.getElementById('manualDesc').value.trim();
-  const amt  = parseFloat(document.getElementById('manualAmt').value) || 0;
-  const date = document.getElementById('manualDate').value;
-  const note = document.getElementById('manualNote').value;
-  if(!desc){ toast('Enter a description for this sale','err'); return; }
-  if(amt <= 0){ toast('Enter a valid amount','err'); return; }
-  const btn = document.getElementById('manualSaleBtn');
-  btn.disabled = true; btn.textContent = 'Saving…';
-  try {
-    const saleId = genSaleId();
-    const saleData = {
-      sale_id    : saleId,
-      product_id : 'MANUAL',
-      product_name: desc,
-      category   : 'Manual Sale',
-      qty_sold   : 1,
-      unit_price : amt,
-      sale_total : amt,
-      recorded_by: document.getElementById('manualBy')?.value || curUser?.name || 'Admin',
-      notes      : note,
-      sale_date  : date,
-    };
-    await apiPost('KGSale', saleData);
-    await logActivity('sale', desc, `Manual sale @ ${peso(amt)}`);
-    sales = await apiGet('KGSale').catch(()=>sales);
-    sales.forEach(s=>{ if(s.created_date&&s.created_date.includes('T')&&!s.created_date.endsWith('Z')&&!s.created_date.includes('+')) s.created_date+='Z'; });
-    sales.sort((a,b)=>new Date(b.created_date||0)-new Date(a.created_date||0));
-    toast(`✅ Manual sale saved — ${peso(amt)}`,'ok');
-    go('saleslog');
-  } catch(e){ toast('Failed: '+e.message,'err'); }
-  finally{ btn.disabled=false; btn.textContent='💰 Save Manual Sale'; }
 }
 
 // ═══════════════════ SALES LOG ═══════════════════
@@ -2424,13 +2394,14 @@ function renderExpenses(){
       <td><div class="fw7 fs12">${phDate(e.expense_date||e.created_date)}</div><div class="fs11 text-gray fs10">${e.created_date?phTime(e.created_date):''}</div></td>
       <td class="tbl-col-hide"><span class="badge ${e.recorded_by==='Admin'?'b-admin':'b-asst'}">${e.recorded_by||'Admin'}</span></td>
       <td class="tbl-col-hide fs11 text-gray">${e.notes||'—'}</td>
-      <td><button class="btn btn-xs" style="background:var(--red2);color:var(--red);border:1px solid rgba(239,68,68,.3)" onclick="deleteExpense('${e.id}','${(e.description||'').replace(/'/g,"'")}')">🗑️</button></td>
+      <td>${curUser&&curUser.role==='admin'?`<button class="btn btn-xs" style="background:var(--red2);color:var(--red);border:1px solid rgba(239,68,68,.3)" onclick="deleteExpense('${e.id}','${(e.description||'').replace(/'/g,"'")}')">🗑️</button>`:`<button class="btn btn-xs" style="opacity:.4;cursor:not-allowed;background:var(--red2);color:var(--red);border:1px solid rgba(239,68,68,.3)" onclick="toast('Only Admin can delete expenses','err')">🔒</button>`}</td>
     </tr>`).join('')||`<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--gray)">No expenses in this period</td></tr>`;
   document.getElementById('expFooter').innerHTML=list.length?`${list.length} expenses · Total: <span class="num text-red fw7" style="font-size:15px">${peso(tot)}</span>`:'';
 }
 
 let expenseDeleteTarget=null;
-async function deleteExpense(id,desc){
+async function deleteExpense(
+  if(!_adminOnly('delete','delete expenses')) return;id,desc){
   if(!confirm(`Delete expense "${desc}"?`)) return;
   try {
     await apiDel('KGExpense',id);
@@ -2471,7 +2442,7 @@ function openChangePin(){
   document.getElementById('changePinModal').classList.add('open');
 }
 function closeChangePin(){ document.getElementById('changePinModal').classList.remove('open'); }
-async function saveNewPins(){
+function saveNewPins(){
   const pins=getPins();
   const newAdmin=document.getElementById('newAdminPin').value.trim();
   const newAsst=document.getElementById('newAsstPin').value.trim();
@@ -2480,29 +2451,6 @@ async function saveNewPins(){
   if(newAdmin) pins.admin=newAdmin;
   if(newAsst) pins.asst=newAsst;
   savePins(pins);
-  // Also persist to Supabase so changes survive page reload
-  try {
-    const updates = [];
-    if(newAdmin) updates.push({key:'admin_pin', value:pins.admin});
-    if(newAsst)  updates.push({key:'asst_pin',  value:pins.asst});
-    for(const row of updates){
-      // Try update first
-      const upd = await fetch(SB_URL+'/kg_settings?key=eq.'+row.key, {
-        method:'PATCH',
-        headers:{...SB_HDR,'Content-Type':'application/json','Prefer':'return=minimal'},
-        body:JSON.stringify({value:row.value})
-      });
-      // If no row existed (204 but 0 rows matched), insert
-      const countHdr = upd.headers.get('content-range');
-      if(countHdr && countHdr.startsWith('0')){
-        await fetch(SB_URL+'/kg_settings', {
-          method:'POST',
-          headers:{...SB_HDR,'Content-Type':'application/json','Prefer':'return=minimal'},
-          body:JSON.stringify({key:row.key, value:row.value})
-        });
-      }
-    }
-  } catch(e){ console.warn('PIN Supabase sync failed:', e); }
   closeChangePin();
   toast('✅ PINs updated successfully','ok');
 }
@@ -2512,6 +2460,7 @@ document.getElementById('changePinModal').addEventListener('click',e=>{
 
 // ═══════════════════ ADD EXPENSE ═══════════════════
 function openAddExpense(){
+  if(!_adminOnly('add','add expenses')) return;
   document.getElementById('expModal').classList.add('open');
   document.getElementById('expBy').value=curUser?.name||'Admin';
   document.getElementById('expDesc').value='';
@@ -2547,7 +2496,8 @@ async function saveExpense(){
 
 // ═══════════════════ DELETE ═══════════════════
 let deleteTarget=null;
-function confirmDelete(id,name){
+function confirmDelete(
+  if(!_adminOnly('delete','delete products')) return;id,name){
   deleteTarget={id,name};
   document.getElementById('delName').textContent=name;
   document.getElementById('delModal').classList.add('open');
@@ -2747,9 +2697,9 @@ function renderWOList() {
       <div class="wo-card-meta">${w.work_date || ''}${w.work_time ? ' · '+w.work_time : ''} · ${svcCount} svc · ${partsCount} part(s)</div>
       <div class="wo-card-footer">
         <div class="wo-card-actions">
-          <button class="btn btn-ghost btn-sm no-print" title="Edit" onclick="event.stopPropagation();openEditWO('${w.id}')">✏️</button>
+          ${curUser&&curUser.role==='admin'?`<button class="btn btn-ghost btn-sm no-print" title="Edit" onclick="event.stopPropagation();openEditWO('${w.id}')">✏️</button>`:`<button class="btn btn-ghost btn-sm no-print" title="Request Edit" onclick="event.stopPropagation();requestEdit('workorder','${w.id}','${(w.wo_number||w.id||'').replace(/'/g,\"'\")}')" >📩</button>`}
           <button class="btn btn-ghost btn-sm no-print" title="Print" onclick="event.stopPropagation();openWOPrint('${w.id}')">🖨️</button>
-          <button class="btn btn-ghost btn-sm no-print" title="Delete" onclick="event.stopPropagation();deleteWO('${w.id}')" style="color:#f87171">🗑️</button>
+          ${curUser&&curUser.role==='admin'?`<button class="btn btn-ghost btn-sm no-print" title="Delete" onclick="event.stopPropagation();deleteWO('${w.id}')" s`:`<button class="btn btn-ghost btn-sm no-print" title="Only Admin can delete" onclick="event.stopPropagation();toast('Only Admin can delete work orders','err')" style="opacity:.4;cursor:not-allowed">🔒</button><span style="display:none" s`}tyle="color:#f87171">🗑️</button>
         </div>
       </div>
     </div>`;
@@ -2758,6 +2708,7 @@ function renderWOList() {
 
 // ---- Open New WO ----
 function openNewWO() {
+  if(!_adminOnly('create','create Work Orders')) return;
   currentWOId = null;
   woServices = []; woParts = [];
   document.getElementById('woModalTitle').textContent = '+ New Work Order';
@@ -2789,6 +2740,7 @@ function openNewWO() {
 
 // ---- Open Edit WO ----
 function openEditWO(id) {
+  if(!_adminOnly('edit','edit Work Orders')) return;
   const wo = workOrders.find(w => w.id === id);
   if (!wo) return;
   currentWOId = id;
@@ -3022,7 +2974,8 @@ async function saveWO() {
 }
 
 // ---- Delete WO ----
-function deleteWO(id) {
+async function deleteWO(id) {
+  if(!_adminOnly('delete','delete Work Orders')) return;
   if (!confirm('Delete this work order?')) return;
   apiDel('KGWorkOrder', id).then(() => {
     workOrders = workOrders.filter(w => w.id !== id);
