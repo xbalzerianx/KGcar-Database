@@ -923,7 +923,7 @@ tbody td{padding:13px 16px;vertical-align:middle}
         </div>
         <div class="tbl-wrap">
           <table>
-            <thead><tr><th>Sale ID</th><th>Date & Time</th><th>Product</th><th class="tbl-col-hide">Category</th><th>Qty</th><th class="tbl-col-hide">MU Price</th><th>Total</th><th class="tbl-col-hide">Recorded By</th></tr></thead>
+            <thead><tr><th>Sale ID</th><th>Date & Time</th><th>Product</th><th class="tbl-col-hide">Category</th><th>Qty</th><th class="tbl-col-hide">MU Price</th><th>Total</th><th class="tbl-col-hide">Recorded By</th><th class="tbl-col-hide">Notes</th></tr></thead>
             <tbody id="slBody"></tbody>
           </table>
         </div>
@@ -2520,7 +2520,8 @@ function renderSL(){
     <td class="fw7">${num(s.qty_sold)}</td>
     <td class="num tbl-col-hide">${peso(s.unit_price)}</td>
     <td class="num text-gold fw7">${peso((s.unit_price||0)*(s.qty_sold||0))}</td>
-    <td class="tbl-col-hide"><span class="badge ${s.recorded_by==='Admin'?'b-admin':'b-asst'}">${s.recorded_by||'Admin'}</span></td></tr>`).join('')
+    <td class="tbl-col-hide"><span class="badge ${s.recorded_by==='Admin'?'b-admin':'b-asst'}">${s.recorded_by||'Admin'}</span></td>
+    <td class="tbl-col-hide fs11 text-gray">${s.notes||'—'}</td></tr>`).join('')
     ||`<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--gray)">No sales recorded yet</td></tr>`;
   document.getElementById('slFooter').innerHTML=list.length?`${list.length} transactions · Total: <span class="num text-gold fw7" style="font-size:15px">${peso(tot)}</span>`:'';
 }
