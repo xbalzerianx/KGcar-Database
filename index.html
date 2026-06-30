@@ -1332,6 +1332,47 @@ function logout() {
 }
 
 
+// ═══════════════ ROLE-SAFE BUTTON HELPERS ═══════════════
+function prodEditBtn(p) {
+  const name = (p.product_name||'').replace(/'/g, "\'");
+  if (curUser && curUser.role === 'admin') {
+    return '<button class="btn btn-ghost btn-xs" onclick="openEdit('' + p.id + '')">✏️ Edit</button>';
+  }
+  return '<button class="btn btn-ghost btn-xs" onclick="requestEdit(\'product\',' + JSON.stringify(p.id) + ',' + JSON.stringify(p.product_name||'') + ')" title="Request admin to edit">📩 Request Edit</button>';
+}
+
+function prodDeleteBtn(p) {
+  if (curUser && curUser.role === 'admin') {
+    return '<button class="btn btn-xs" style="background:var(--red2);color:var(--red);border:1px solid rgba(239,68,68,.3)" onclick="confirmDelete('' + p.id + '\','' + (p.product_name||'').replace(/'/g,"\'") + '')">🗑️</button>';
+  }
+  return '<button class="btn btn-xs" style="opacity:.4;cursor:not-allowed;background:var(--red2);color:var(--red);border:1px solid rgba(239,68,68,.3)" onclick="toast(\'🔒 Only Admin can delete products\',\'err\')">🔒</button>';
+}
+
+function woEditBtn(w) {
+  const label = (w.wo_number || w.id || '').replace(/'/g, "\'");
+  if (curUser && curUser.role === 'admin') {
+    return '<button class="btn btn-ghost btn-sm no-print" title="Edit" onclick="event.stopPropagation();openEditWO('' + w.id + '')">✏️</button>';
+  }
+  return '<button class="btn btn-ghost btn-sm no-print" title="Request Edit" onclick="event.stopPropagation();requestEdit(\'workorder\',' + JSON.stringify(w.id) + ',' + JSON.stringify(w.wo_number||w.id||'') + ')">📩</button>';
+}
+
+function woDeleteBtn(w) {
+  if (curUser && curUser.role === 'admin') {
+    return '<button class="btn btn-ghost btn-sm no-print" title="Delete" onclick="event.stopPropagation();deleteWO('' + w.id + '')" style="color:#f87171">🗑️</button>';
+  }
+  return '<button class="btn btn-ghost btn-sm no-print" title="Only Admin can delete" onclick="event.stopPropagation();toast(\'🔒 Only Admin can delete work orders\',\'err\')" style="opacity:.4;cursor:not-allowed">🔒</button>';
+}
+
+
+function expDeleteBtn(e) {
+  if (curUser && curUser.role === 'admin') {
+    var desc = (e.description||'').replace(/'/g, "\'");
+    return '<button class="btn btn-xs" style="background:var(--red2);color:var(--red);border:1px solid rgba(239,68,68,.3)" onclick="deleteExpense('' + e.id + '\','' + desc + '')">🗑️</button>';
+  }
+  return '<button class="btn btn-xs" style="opacity:.4;cursor:not-allowed;background:var(--red2);color:var(--red);border:1px solid rgba(239,68,68,.3)" onclick="toast(\'🔒 Only Admin can delete expenses\',\'err\')">🔒</button>';
+}
+
+
 // ═══════════════ ASSISTANT REQUEST EDIT ═══════════════
 function requestEdit(type, id, label) {
   if (curUser && curUser.role === 'admin') return; // Admin can edit directly
@@ -1873,9 +1914,9 @@ function renderInv(){
       <td class="num fw7" style="color:var(--green)">${p.markup_price&&p.markup_price>0?peso((p.markup_price||0)*(p.stock_qty||0)):'—'}</td>
       <td>${badgeEl(p)}</td>
       <td><div class="flex gap8">
-        ${curUser&&curUser.role==='admin'?`<button class="btn btn-ghost btn-xs" onclick="openEdit('${p.id}')">✏️ Edit</button>`:`<button class="btn btn-ghost btn-xs" onclick="requestEdit('product','${p.id}','${(p.product_name||'').replace(/'/g,\"'\")}')" title="Request admin to edit">📩 Request Edit</button>`}
+        ${prodEditBtn(p)}
         <button class="btn btn-gold btn-xs" onclick="quickSell('${p.id}')">💰 Sell</button>
-        <button class="btn btn-xs" style="background:var(--red2);color:var(--red);border:1px solid rgba(239,68,68,.3)" ${curUser&&curUser.role==='admin'?`onclick="confirmDelete(this.getAttribute('data-pid')`:`onclick="toast('Only Admin can delete products','err')" disabled style="opacity:.4;cursor:not-allowed;background:var(--red2);color:var(--red);border:1px solid rgba(239,68,68,.3)" data-pid="!BLOCKED!"`},this.getAttribute('data-pname'))" data-pid="${p.id}" data-pname="${p.product_name}">🗑️</button>
+        ${prodDeleteBtn(p)}
       </div></td>
     </tr>`).join('')||`<tr><td colspan="8"><div class="empty"><div class="empty-icon">📦</div><div>No products found</div></div></td></tr>`;
   document.getElementById('invFooter').innerHTML='';
@@ -2393,7 +2434,7 @@ function renderExpenses(){
       <td><div class="fw7 fs12">${phDate(e.expense_date||e.created_date)}</div><div class="fs11 text-gray fs10">${e.created_date?phTime(e.created_date):''}</div></td>
       <td class="tbl-col-hide"><span class="badge ${e.recorded_by==='Admin'?'b-admin':'b-asst'}">${e.recorded_by||'Admin'}</span></td>
       <td class="tbl-col-hide fs11 text-gray">${e.notes||'—'}</td>
-      <td>${curUser&&curUser.role==='admin'?`<button class="btn btn-xs" style="background:var(--red2);color:var(--red);border:1px solid rgba(239,68,68,.3)" onclick="deleteExpense('${e.id}','${(e.description||'').replace(/'/g,"'")}')">🗑️</button>`:`<button class="btn btn-xs" style="opacity:.4;cursor:not-allowed;background:var(--red2);color:var(--red);border:1px solid rgba(239,68,68,.3)" onclick="toast('Only Admin can delete expenses','err')">🔒</button>`}</td>
+      <td>${expDeleteBtn(e)}</td>
     </tr>`).join('')||`<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--gray)">No expenses in this period</td></tr>`;
   document.getElementById('expFooter').innerHTML=list.length?`${list.length} expenses · Total: <span class="num text-red fw7" style="font-size:15px">${peso(tot)}</span>`:'';
 }
@@ -2695,9 +2736,9 @@ function renderWOList() {
       <div class="wo-card-meta">${w.work_date || ''}${w.work_time ? ' · '+w.work_time : ''} · ${svcCount} svc · ${partsCount} part(s)</div>
       <div class="wo-card-footer">
         <div class="wo-card-actions">
-          ${curUser&&curUser.role==='admin'?`<button class="btn btn-ghost btn-sm no-print" title="Edit" onclick="event.stopPropagation();openEditWO('${w.id}')">✏️</button>`:`<button class="btn btn-ghost btn-sm no-print" title="Request Edit" onclick="event.stopPropagation();requestEdit('workorder','${w.id}','${(w.wo_number||w.id||'').replace(/'/g,\"'\")}')" >📩</button>`}
+          ${${woEditBtn(w)}
           <button class="btn btn-ghost btn-sm no-print" title="Print" onclick="event.stopPropagation();openWOPrint('${w.id}')">🖨️</button>
-          ${curUser&&curUser.role==='admin'?`<button class="btn btn-ghost btn-sm no-print" title="Delete" onclick="event.stopPropagation();deleteWO('${w.id}')" s`:`<button class="btn btn-ghost btn-sm no-print" title="Only Admin can delete" onclick="event.stopPropagation();toast('Only Admin can delete work orders','err')" style="opacity:.4;cursor:not-allowed">🔒</button><span style="display:none" s`}tyle="color:#f87171">🗑️</button>
+          ${${woDeleteBtn(w)}tyle="color:#f87171">🗑️</button>
         </div>
       </div>
     </div>`;
