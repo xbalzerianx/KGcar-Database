@@ -824,8 +824,13 @@ tbody td{padding:13px 16px;vertical-align:middle}
                 <div class="inp-hint" id="saleHint"></div>
               </div>
               <div class="fg">
+                <label class="label">Discount (%)</label>
+                <input class="inp" type="number" id="saleDisc" min="0" max="100" step="0.01" placeholder="0" oninput="calcTotal()"/>
+              </div>
+              <div class="fg full">
                 <label class="label">Sale Total</label>
                 <input class="inp" type="text" id="saleTot" readonly style="color:var(--gold);font-weight:800;font-size:16px"/>
+                <div class="inp-hint" id="saleDiscHint" style="color:var(--gold)"></div>
               </div>
               <div class="fg">
                 <label class="label">Sale Date</label>
@@ -2257,12 +2262,13 @@ function renderActLog(){
 // ═══════════════════ SALE ═══════════════════
 function resetSale(){
   selProd=null;
-  ['saleQ','saleQty','saleTot','saleNote'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  ['saleQ','saleQty','saleTot','saleNote','saleDisc'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   const sd=document.getElementById('saleDate'); if(sd) sd.value=today();
   if(curUser){ const sb=document.getElementById('saleBy'); if(sb) sb.value=curUser.name; }
   const sr=document.getElementById('saleResults'); if(sr) sr.style.display='none';
   const sp=document.getElementById('selProdBox'); if(sp) sp.style.display='none';
   const sh=document.getElementById('saleHint'); if(sh) sh.textContent='';
+  const sdh=document.getElementById('saleDiscHint'); if(sdh) sdh.textContent='';
   // Reset manual sale form too
   const md=document.getElementById('manualDate'); if(md) md.value=today();
   const mb=document.getElementById('manualBy'); if(mb&&curUser) mb.value=curUser.name;
@@ -2298,34 +2304,49 @@ function quickSell(id){go('sale');setTimeout(()=>pickProd(id),50);}
 function calcTotal(){
   if(!selProd)return;
   const q=parseInt(document.getElementById('saleQty').value)||0;
-  document.getElementById('saleTot').value=q>0?peso(q*(selProd.markup_price||selProd.unit_price)):'';
+  const disc=Math.min(100,Math.max(0,parseFloat(document.getElementById('saleDisc').value)||0));
+  const basePrice=selProd.markup_price||selProd.unit_price;
+  const discPrice=basePrice*(1-disc/100);
+  document.getElementById('saleTot').value=q>0?peso(q*discPrice):'';
+  const hint=document.getElementById('saleDiscHint');
+  if(hint){
+    hint.textContent = (disc>0 && q>0) ? `${peso(basePrice)}/unit → ${peso(discPrice)}/unit after ${disc}% off` : '';
+  }
 }
 async function doSale(){
   if(!selProd){toast('Select a product first','err');return;}
   const qty=parseInt(document.getElementById('saleQty').value)||0;
   if(qty<=0){toast('Enter a valid quantity','err');return;}
   if(qty>selProd.stock_qty){toast(`Only ${selProd.stock_qty} in stock!`,'err');return;}
+  const disc=Math.min(100,Math.max(0,parseFloat(document.getElementById('saleDisc').value)||0));
+  const basePrice=selProd.markup_price||selProd.unit_price;
+  const finalPrice=basePrice*(1-disc/100);
   const btn=document.getElementById('saleBtn');
   btn.disabled=true;btn.textContent='Processing…';
   try {
     const saleId=genSaleId();
+    let noteText=document.getElementById('saleNote').value;
+    if(disc>0){
+      const discTag=`[${disc}% off, was ${peso(basePrice)}]`;
+      noteText = noteText ? `${noteText} ${discTag}` : discTag;
+    }
     const saleData={
       sale_id:saleId,
       product_id:selProd.product_id,
       product_name:selProd.product_name,
       category:selProd.category,
       qty_sold:qty,
-      unit_price:selProd.markup_price||selProd.unit_price,
-      sale_total:qty*(selProd.markup_price||selProd.unit_price),
+      unit_price:finalPrice,
+      sale_total:qty*finalPrice,
       recorded_by:curUser?.name||'Admin',
-      notes:document.getElementById('saleNote').value,
+      notes:noteText,
       sale_date:document.getElementById('saleDate').value,
     };
     const newStock = selProd.stock_qty - qty;
     await apiPut('KGProduct', selProd.id, {stock_qty: newStock});
     await apiPost('KGSale', saleData);
-    await logActivity('sale', selProd.product_name, `Sold ${qty}x @ ${peso(selProd.markup_price||selProd.unit_price)} = ${peso(qty*(selProd.markup_price||selProd.unit_price))}`);
-    toast(`✅ ${qty}x ${selProd.product_name} — ${peso(qty*(selProd.markup_price||selProd.unit_price))}`,'ok');
+    await logActivity('sale', selProd.product_name, `Sold ${qty}x @ ${peso(finalPrice)}${disc>0?` (${disc}% off)`:''} = ${peso(qty*finalPrice)}`);
+    toast(`✅ ${qty}x ${selProd.product_name} — ${peso(qty*finalPrice)}`,'ok');
     // Update local products array immediately so inventory reflects new stock
     const pIdx = products.findIndex(p => p.id === selProd.id);
     if (pIdx > -1) products[pIdx].stock_qty = newStock;
