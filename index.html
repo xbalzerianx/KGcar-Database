@@ -824,8 +824,14 @@ tbody td{padding:13px 16px;vertical-align:middle}
                 <div class="inp-hint" id="saleHint"></div>
               </div>
               <div class="fg">
-                <label class="label">Discount (%)</label>
-                <input class="inp" type="number" id="saleDisc" min="0" max="100" step="0.01" placeholder="0" oninput="calcTotal()"/>
+                <label class="label">Discount</label>
+                <div style="display:flex;gap:6px">
+                  <select class="inp" id="saleDiscType" style="flex:0 0 64px;padding-left:8px;padding-right:2px" onchange="calcTotal()">
+                    <option value="pct">%</option>
+                    <option value="amt">&#8369;</option>
+                  </select>
+                  <input class="inp" type="number" id="saleDisc" min="0" step="0.01" placeholder="0" oninput="calcTotal()" style="flex:1"/>
+                </div>
               </div>
               <div class="fg full">
                 <label class="label">Sale Total</label>
@@ -2269,6 +2275,7 @@ function resetSale(){
   const sp=document.getElementById('selProdBox'); if(sp) sp.style.display='none';
   const sh=document.getElementById('saleHint'); if(sh) sh.textContent='';
   const sdh=document.getElementById('saleDiscHint'); if(sdh) sdh.textContent='';
+  const sdt=document.getElementById('saleDiscType'); if(sdt) sdt.value='pct';
   // Reset manual sale form too
   const md=document.getElementById('manualDate'); if(md) md.value=today();
   const mb=document.getElementById('manualBy'); if(mb&&curUser) mb.value=curUser.name;
@@ -2304,30 +2311,51 @@ function quickSell(id){go('sale');setTimeout(()=>pickProd(id),50);}
 function calcTotal(){
   if(!selProd)return;
   const q=parseInt(document.getElementById('saleQty').value)||0;
-  const disc=Math.min(100,Math.max(0,parseFloat(document.getElementById('saleDisc').value)||0));
+  const discType=document.getElementById('saleDiscType')?.value||'pct';
+  let discRaw=parseFloat(document.getElementById('saleDisc').value)||0;
   const basePrice=selProd.markup_price||selProd.unit_price;
-  const discPrice=basePrice*(1-disc/100);
-  document.getElementById('saleTot').value=q>0?peso(q*discPrice):'';
-  const hint=document.getElementById('saleDiscHint');
-  if(hint){
-    hint.textContent = (disc>0 && q>0) ? `${peso(basePrice)}/unit → ${peso(discPrice)}/unit after ${disc}% off` : '';
+  const baseTotal=q*basePrice;
+  let finalTotal, hintText='';
+  if(discType==='amt'){
+    discRaw=Math.max(0,discRaw);
+    finalTotal=Math.max(0,baseTotal-discRaw);
+    if(discRaw>0 && q>0) hintText = `${peso(baseTotal)} total → ${peso(finalTotal)} total after ₱${discRaw} off`;
+  } else {
+    discRaw=Math.min(100,Math.max(0,discRaw));
+    const discPrice=basePrice*(1-discRaw/100);
+    finalTotal=q*discPrice;
+    if(discRaw>0 && q>0) hintText = `${peso(basePrice)}/unit → ${peso(discPrice)}/unit after ${discRaw}% off`;
   }
+  document.getElementById('saleTot').value=q>0?peso(finalTotal):'';
+  const hint=document.getElementById('saleDiscHint');
+  if(hint) hint.textContent=hintText;
 }
 async function doSale(){
   if(!selProd){toast('Select a product first','err');return;}
   const qty=parseInt(document.getElementById('saleQty').value)||0;
   if(qty<=0){toast('Enter a valid quantity','err');return;}
   if(qty>selProd.stock_qty){toast(`Only ${selProd.stock_qty} in stock!`,'err');return;}
-  const disc=Math.min(100,Math.max(0,parseFloat(document.getElementById('saleDisc').value)||0));
+  const discType=document.getElementById('saleDiscType')?.value||'pct';
+  let discRaw=parseFloat(document.getElementById('saleDisc').value)||0;
   const basePrice=selProd.markup_price||selProd.unit_price;
-  const finalPrice=basePrice*(1-disc/100);
+  const baseTotal=qty*basePrice;
+  let finalTotal, discTag='';
+  if(discType==='amt'){
+    discRaw=Math.max(0,discRaw);
+    finalTotal=Math.max(0,baseTotal-discRaw);
+    if(discRaw>0) discTag=`[₱${discRaw} off, was ${peso(baseTotal)}]`;
+  } else {
+    discRaw=Math.min(100,Math.max(0,discRaw));
+    finalTotal=baseTotal*(1-discRaw/100);
+    if(discRaw>0) discTag=`[${discRaw}% off, was ${peso(baseTotal)}]`;
+  }
+  const finalPrice=qty>0?finalTotal/qty:basePrice;
   const btn=document.getElementById('saleBtn');
   btn.disabled=true;btn.textContent='Processing…';
   try {
     const saleId=genSaleId();
     let noteText=document.getElementById('saleNote').value;
-    if(disc>0){
-      const discTag=`[${disc}% off, was ${peso(basePrice)}]`;
+    if(discTag){
       noteText = noteText ? `${noteText} ${discTag}` : discTag;
     }
     const saleData={
@@ -2337,7 +2365,7 @@ async function doSale(){
       category:selProd.category,
       qty_sold:qty,
       unit_price:finalPrice,
-      sale_total:qty*finalPrice,
+      sale_total:finalTotal,
       recorded_by:curUser?.name||'Admin',
       notes:noteText,
       sale_date:document.getElementById('saleDate').value,
@@ -2345,8 +2373,8 @@ async function doSale(){
     const newStock = selProd.stock_qty - qty;
     await apiPut('KGProduct', selProd.id, {stock_qty: newStock});
     await apiPost('KGSale', saleData);
-    await logActivity('sale', selProd.product_name, `Sold ${qty}x @ ${peso(finalPrice)}${disc>0?` (${disc}% off)`:''} = ${peso(qty*finalPrice)}`);
-    toast(`✅ ${qty}x ${selProd.product_name} — ${peso(qty*finalPrice)}`,'ok');
+    await logActivity('sale', selProd.product_name, `Sold ${qty}x @ ${peso(finalPrice)}${discTag?` (${discTag})`:''} = ${peso(finalTotal)}`);
+    toast(`✅ ${qty}x ${selProd.product_name} — ${peso(finalTotal)}`,'ok');
     // Update local products array immediately so inventory reflects new stock
     const pIdx = products.findIndex(p => p.id === selProd.id);
     if (pIdx > -1) products[pIdx].stock_qty = newStock;
