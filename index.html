@@ -1387,44 +1387,44 @@ function prodEditBtn(p) {
   var id = p.id;
   var nm = (p.product_name || '');
   if (curUser && curUser.role === 'admin') {
-    return "<button class=\"btn btn-ghost btn-xs\" onclick=\"openEdit('" + id + "')\">✏️ Edit</button>";
+    return "<button class="btn btn-ghost btn-xs" onclick="openEdit('" + id + "')">✏️ Edit</button>";
   }
-  return "<button class=\"btn btn-ghost btn-xs\" onclick=\"requestEdit('product','" + id + "','" + nm.replace(/'/g,'&#39;') + "')\" title=\"Request admin to edit\">📩 Request Edit</button>";
+  return "<button class="btn btn-ghost btn-xs" onclick="requestEdit('product','" + id + "','" + nm.replace(/'/g,'&#39;') + "')" title="Request admin to edit">📩 Request Edit</button>";
 }
 
 function prodDeleteBtn(p) {
   var id = p.id;
   var nm = (p.product_name || '').replace(/'/g,'&#39;');
   if (curUser && curUser.role === 'admin') {
-    return "<button class=\"btn btn-xs\" style=\"background:var(--red2);color:var(--red);border:1px solid rgba(239,68,68,.3)\" onclick=\"confirmDelete('" + id + "','" + nm + "')\">🗑️</button>";
+    return "<button class="btn btn-xs" style="background:var(--red2);color:var(--red);border:1px solid rgba(239,68,68,.3)" onclick="confirmDelete('" + id + "','" + nm + "')">🗑️</button>";
   }
-  return "<button class=\"btn btn-xs\" style=\"opacity:.4;cursor:not-allowed;background:var(--red2);color:var(--red);border:1px solid rgba(239,68,68,.3)\" onclick=\"toast('🔒 Only Admin can delete products','err')\">🔒</button>";
+  return "<button class="btn btn-xs" style="opacity:.4;cursor:not-allowed;background:var(--red2);color:var(--red);border:1px solid rgba(239,68,68,.3)" onclick="toast('🔒 Only Admin can delete products','err')">🔒</button>";
 }
 
 function woEditBtn(w) {
   var id = w.id;
   var num = (w.wo_number || w.id || '').replace(/'/g,'&#39;');
   if (curUser && curUser.role === 'admin') {
-    return "<button class=\"btn btn-ghost btn-sm no-print\" title=\"Edit\" onclick=\"event.stopPropagation();openEditWO('" + id + "')\">✏️</button>";
+    return "<button class="btn btn-ghost btn-sm no-print" title="Edit" onclick="event.stopPropagation();openEditWO('" + id + "')">✏️</button>";
   }
-  return "<button class=\"btn btn-ghost btn-sm no-print\" title=\"Request Edit\" onclick=\"event.stopPropagation();requestEdit('workorder','" + id + "','" + num + "')\">📩</button>";
+  return "<button class="btn btn-ghost btn-sm no-print" title="Request Edit" onclick="event.stopPropagation();requestEdit('workorder','" + id + "','" + num + "')">📩</button>";
 }
 
 function woDeleteBtn(w) {
   var id = w.id;
   if (curUser && curUser.role === 'admin') {
-    return "<button class=\"btn btn-ghost btn-sm no-print\" title=\"Delete\" onclick=\"event.stopPropagation();deleteWO('" + id + "')\" style=\"color:#f87171\">🗑️</button>";
+    return "<button class="btn btn-ghost btn-sm no-print" title="Delete" onclick="event.stopPropagation();deleteWO('" + id + "')" style="color:#f87171">🗑️</button>";
   }
-  return "<button class=\"btn btn-ghost btn-sm no-print\" title=\"Only Admin can delete\" onclick=\"event.stopPropagation();toast('🔒 Only Admin can delete work orders','err')\" style=\"opacity:.4;cursor:not-allowed\">🔒</button>";
+  return "<button class="btn btn-ghost btn-sm no-print" title="Only Admin can delete" onclick="event.stopPropagation();toast('🔒 Only Admin can delete work orders','err')" style="opacity:.4;cursor:not-allowed">🔒</button>";
 }
 
 function expDeleteBtn(e) {
   var id = e.id;
   var desc = (e.description || '').replace(/'/g,'&#39;');
   if (curUser && curUser.role === 'admin') {
-    return "<button class=\"btn btn-xs\" style=\"background:var(--red2);color:var(--red);border:1px solid rgba(239,68,68,.3)\" onclick=\"deleteExpense('" + id + "','" + desc + "')\">🗑️</button>";
+    return "<button class="btn btn-xs" style="background:var(--red2);color:var(--red);border:1px solid rgba(239,68,68,.3)" onclick="deleteExpense('" + id + "','" + desc + "')">🗑️</button>";
   }
-  return "<button class=\"btn btn-xs\" style=\"opacity:.4;cursor:not-allowed;background:var(--red2);color:var(--red);border:1px solid rgba(239,68,68,.3)\" onclick=\"toast('🔒 Only Admin can delete expenses','err')\">🔒</button>";
+  return "<button class="btn btn-xs" style="opacity:.4;cursor:not-allowed;background:var(--red2);color:var(--red);border:1px solid rgba(239,68,68,.3)" onclick="toast('🔒 Only Admin can delete expenses','err')">🔒</button>";
 }
 
 
@@ -1432,7 +1432,13 @@ function expDeleteBtn(e) {
 function requestEdit(type, id, label) {
   if (curUser && curUser.role === 'admin') return; // Admin can edit directly
   const typeLabel = type === 'product' ? 'Product' : type === 'workorder' ? 'Work Order' : type;
-  const msg = `📩 Edit Request\n\nEncoder "${curUser?.name||'Staff'}" is requesting to edit:\n\n${typeLabel}: "${label}"\n\nPlease review and make the necessary changes in the system.`;
+  const msg = `📩 Edit Request
+
+Encoder "${curUser?.name||'Staff'}" is requesting to edit:
+
+${typeLabel}: "${label}"
+
+Please review and make the necessary changes in the system.`;
   // Show a modal-style toast with the message
   showRequestEditModal(typeLabel, label);
 }
@@ -2513,7 +2519,8 @@ function exportCSV(type) {
   if(!rows.length){ toast('No data in selected period','err'); return; }
 
   const escape = v => `"${String(v).replace(/"/g,'""')}"`;
-  const csv = [header, ...rows].map(r=>r.map(escape).join(',')).join('\n');
+  const csv = [header, ...rows].map(r=>r.map(escape).join(',')).join('
+');
   const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -2793,7 +2800,7 @@ function renderCatMgr(){
     const cnt = counts[c.name]||0;
     return `<div style="display:flex;align-items:center;justify-content:space-between;background:#151c2c;border:1px solid #2a3347;border-radius:8px;padding:10px 14px">
       <span style="color:#e8e0d5;font-size:14px">🏷️ ${c.name} <span style="color:#8a8fa8;font-size:12px">(${cnt} product${cnt!==1?'s':''})</span></span>
-      <button onclick="removeCategory('${c.id}','${c.name.replace(/'/g,"\'")}')"
+      <button onclick="removeCategory('${c.id}','${c.name.replace(/'/g,"'")}')"
         style="background:transparent;border:1px solid #c0392b;color:#c0392b;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer">🗑️ Remove</button>
     </div>`;
   }).join('');
