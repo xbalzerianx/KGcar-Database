@@ -3160,6 +3160,17 @@ async function saveWO() {
     } else {
       const saved = await apiPost('KGWorkOrder', payload);
       workOrders.unshift(saved);
+
+      // ── Deduct inventory for parts used in this Work Order ──
+      for (const part of woParts) {
+        if (!part.id) continue; // skip manual/unlinked parts
+        const prod = products.find(x => x.id === part.id);
+        if (!prod) continue;
+        const newQty = Math.max(0, (prod.stock_qty || 0) - (part.qty || 1));
+        await apiPut('KGProduct', part.id, { stock_qty: newQty });
+        prod.stock_qty = newQty; // update in-memory
+      }
+
       toast('Work order saved!', 'success');
     }
     closeWOModal();
