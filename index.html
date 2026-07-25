@@ -3037,7 +3037,7 @@ function woPartSearch() {
   const q = document.getElementById('woPartQ').value.toLowerCase().trim();
   const res = document.getElementById('woPartResults');
   if (!q || products.length === 0) { res.style.display = 'none'; return; }
-  const matches = products.filter(p => [p.product_name, p.brand || '', p.category || '', p.product_id || ''].join(' ').toLowerCase().includes(q)).slice(0, 10);
+  const matches = products.filter(p => (p.stock_qty || 0) > 0 && [p.product_name, p.brand || '', p.category || '', p.product_id || ''].join(' ').toLowerCase().includes(q)).slice(0, 10);
   if (!matches.length) {
     res.style.display = 'block';
     positionDropdown('woPartQ','woPartResults');
@@ -3057,6 +3057,7 @@ function woPartSearch() {
 function pickWOPart(pid) {
   const p = products.find(x => x.id === pid);
   if (!p) return;
+  if ((p.stock_qty || 0) <= 0) { toast('"' + p.product_name + '" is out of stock.', 'error'); return; }
   const existing = woParts.find(x => x.id === pid);
   if (existing) { existing.qty = (existing.qty || 1) + 1; }
   else { woParts.push({ id: p.id, product_name: p.product_name, qty: 1, unit_price: p.unit_price || 0 }); }
