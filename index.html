@@ -700,6 +700,9 @@ tbody td{padding:13px 16px;vertical-align:middle}
     <button class="sb-item" data-page="employees" onclick="go('employees')">
       <span class="sb-item-icon">👥</span>Employees
     </button>
+    <button class="sb-item" data-page="clients" onclick="go('clients')">
+      <span class="sb-item-icon">🧑‍🤝‍🧑</span>Clients
+    </button>
     <!-- WO Templates merged into WO modal — no longer a separate page -->
     <div id="sbWOTplBtn" style="display:none"></div>
     <div class="sb-footer">
@@ -1165,6 +1168,36 @@ tbody td{padding:13px 16px;vertical-align:middle}
       <button class="btn btn-gold" id="modalSaveBtn" onclick="saveProduct()">Save Product</button>
     </div>
   </div>
+
+<!-- ═══════════════════ CLIENTS PAGE ═══════════════════ -->
+<div id="page-clients" class="page">
+  <div class="page-hdr">
+    <div class="page-hdr-row">
+      <div>
+        <div class="page-title">Clients</div>
+        <div class="page-sub">All clients from Work Orders — full service &amp; parts history</div>
+      </div>
+      <input id="clientSearch" type="text" placeholder="🔍  Search name or plate…" oninput="renderClients()"
+        style="background:var(--navy3);border:1px solid var(--navy4);color:var(--white);border-radius:8px;padding:8px 16px;font-size:14px;width:220px;outline:none;">
+    </div>
+  </div>
+  <div id="clientList" style="display:flex;flex-direction:column;gap:12px;padding-bottom:40px;"></div>
+</div>
+
+<!-- CLIENT DETAIL MODAL -->
+<div id="clientDetailOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:9100;display:none;align-items:center;justify-content:center;" onclick="if(event.target===this)closeClientDetail()">
+  <div style="background:var(--navy2);border-radius:16px;width:min(740px,96vw);max-height:88vh;overflow-y:auto;padding:28px 28px 32px;box-shadow:0 24px 64px rgba(0,0,0,0.5);">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px">
+      <div>
+        <div id="cdName" style="font-size:20px;font-weight:700;color:var(--white)"></div>
+        <div id="cdMeta" style="font-size:13px;color:var(--gray);margin-top:3px"></div>
+      </div>
+      <button onclick="closeClientDetail()" style="background:var(--navy3);border:none;color:var(--gray);font-size:22px;cursor:pointer;border-radius:8px;padding:2px 12px;line-height:1.4;">&times;</button>
+    </div>
+    <div id="cdWOList"></div>
+  </div>
+</div>
+
 </div>
 
 <!-- CHANGE PIN MODAL (Admin only) -->
@@ -1702,6 +1735,7 @@ function render(){
   if(curPage==='expenses')renderExpenses();
   if(curPage==='actlog')renderActLog();
   if(curPage==='alerts')renderAlerts();
+  if(curPage==='clients')renderClients();
 }
 
 // ═══════════════════ FILTER ═══════════════════
@@ -3878,6 +3912,159 @@ function showWOCommission(laborTotal) {
   } else {
     commDiv.style.display = 'none';
   }
+}
+
+
+// ═══════════════════ CLIENTS ═══════════════════
+function renderClients() {
+  const q = (document.getElementById('clientSearch')?.value || '').toLowerCase().trim();
+
+  // Group work orders by customer_name (case-insensitive)
+  const map = {};
+  workOrders.forEach(wo => {
+    const key = (wo.customer_name || 'Unknown').trim();
+    const keyLower = key.toLowerCase();
+    if (!map[keyLower]) map[keyLower] = { name: key, phone: wo.customer_phone || '', wos: [] };
+    map[keyLower].wos.push(wo);
+  });
+
+  let clients = Object.values(map);
+
+  // Search filter
+  if (q) {
+    clients = clients.filter(c => {
+      const plates = c.wos.map(w => (w.plate_number || '').toLowerCase()).join(' ');
+      return c.name.toLowerCase().includes(q) || plates.includes(q);
+    });
+  }
+
+  // Sort alphabetically
+  clients.sort((a,b) => a.name.localeCompare(b.name));
+
+  const el = document.getElementById('clientList');
+  if (!clients.length) {
+    el.innerHTML = '<div style="text-align:center;color:var(--gray);padding:60px 0;font-size:15px">No clients found.</div>';
+    return;
+  }
+
+  el.innerHTML = clients.map(c => {
+    const woCount = c.wos.length;
+    const totalSpent = c.wos.reduce((s,w) => s + (w.grand_total || 0), 0);
+    const lastWO = c.wos.sort((a,b) => new Date(b.work_date) - new Date(a.work_date))[0];
+    const plates = [...new Set(c.wos.map(w => w.plate_number).filter(Boolean))];
+    const vehicles = [...new Set(c.wos.map(w => w.vehicle).filter(Boolean))];
+    return `
+    <div onclick="openClientDetail('${c.name.replace(/'/g,"\\'")}\")" style="background:var(--navy2);border:1px solid var(--navy3);border-radius:12px;padding:18px 22px;cursor:pointer;transition:border-color .15s;display:flex;justify-content:space-between;align-items:center;gap:16px;"
+      onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--navy3)'">
+      <div style="display:flex;align-items:center;gap:16px;flex:1;min-width:0">
+        <div style="background:var(--gold3);border-radius:50%;width:46px;height:46px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0">🧑</div>
+        <div style="min-width:0">
+          <div style="font-size:15px;font-weight:700;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.name}</div>
+          <div style="font-size:12px;color:var(--gray);margin-top:3px">
+            ${c.phone ? c.phone + ' · ' : ''}${plates.length ? '🚘 ' + plates.join(', ') : ''}
+            ${vehicles.length ? ' · ' + vehicles[0] : ''}
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:28px;flex-shrink:0;text-align:right">
+        <div>
+          <div style="font-size:11px;color:var(--gray);text-transform:uppercase;letter-spacing:.5px">Work Orders</div>
+          <div style="font-size:18px;font-weight:700;color:var(--gold)">${woCount}</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--gray);text-transform:uppercase;letter-spacing:.5px">Total Spent</div>
+          <div style="font-size:18px;font-weight:700;color:var(--green)">${peso(totalSpent)}</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--gray);text-transform:uppercase;letter-spacing:.5px">Last Visit</div>
+          <div style="font-size:13px;font-weight:600;color:var(--white)">${lastWO.work_date || '—'}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openClientDetail(name) {
+  const wos = workOrders.filter(w => (w.customer_name || '').trim().toLowerCase() === name.trim().toLowerCase())
+    .sort((a,b) => new Date(b.work_date) - new Date(a.work_date));
+  if (!wos.length) return;
+  const c = wos[0];
+  const plates = [...new Set(wos.map(w=>w.plate_number).filter(Boolean))];
+  const totalSpent = wos.reduce((s,w) => s+(w.grand_total||0),0);
+
+  document.getElementById('cdName').textContent = name;
+  document.getElementById('cdMeta').textContent =
+    (c.customer_phone || '') +
+    (plates.length ? '  ·  🚘 ' + plates.join(', ') : '') +
+    '  ·  ' + wos.length + ' work order' + (wos.length>1?'s':'') +
+    '  ·  Total spent: ' + peso(totalSpent);
+
+  document.getElementById('cdWOList').innerHTML = wos.map(wo => {
+    const services = JSON.parse(wo.services_json || '[]');
+    const parts    = JSON.parse(wo.parts_json    || '[]');
+    const paidBadge = wo.payment_status === 'paid'
+      ? '<span style="background:#10b98122;color:#10b981;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">PAID</span>'
+      : wo.payment_status === 'receivable'
+      ? '<span style="background:#f59e0b22;color:#f59e0b;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">A/R</span>'
+      : wo.payment_status === 'down_payment'
+      ? '<span style="background:#3b82f622;color:#3b82f6;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">DOWN PMT</span>'
+      : '<span style="background:#6b728022;color:#9ca3af;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">UNPAID</span>';
+
+    const svcRows = services.map(s =>
+      `<tr><td style="padding:6px 10px;color:var(--white);font-size:13px">${s.name||'—'}</td>
+           <td style="padding:6px 10px;color:var(--gold);font-size:13px;text-align:right;white-space:nowrap;font-weight:600">${peso(s.price||0)}</td></tr>`
+    ).join('');
+
+    const partsRows = parts.map(p =>
+      `<tr><td style="padding:6px 10px;color:var(--white);font-size:13px">${p.product_name||'—'} <span style="color:var(--gray)">x${p.qty||1}</span></td>
+           <td style="padding:6px 10px;color:var(--gold);font-size:13px;text-align:right;white-space:nowrap;font-weight:600">${peso((p.unit_price||0)*(p.qty||1))}</td></tr>`
+    ).join('');
+
+    return `
+    <div style="background:var(--navy3);border-radius:10px;padding:16px 18px;margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+        <div>
+          <span style="font-size:14px;font-weight:700;color:var(--gold)">${wo.wo_number||wo.id}</span>
+          <span style="font-size:12px;color:var(--gray);margin-left:10px">${wo.work_date||''} ${wo.work_time||''}</span>
+          ${wo.plate_number ? '<span style="font-size:12px;color:var(--gray);margin-left:10px">🚘 '+wo.plate_number+'</span>' : ''}
+          ${wo.vehicle ? '<span style="font-size:12px;color:var(--gray);margin-left:6px">'+wo.vehicle+'</span>' : ''}
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          ${paidBadge}
+          <span style="font-size:15px;font-weight:700;color:var(--green)">${peso(wo.grand_total||0)}</span>
+        </div>
+      </div>
+      ${services.length ? `
+      <div style="font-size:11px;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Services</div>
+      <table style="width:100%;border-collapse:collapse;margin-bottom:10px">
+        ${svcRows}
+        <tr style="border-top:1px solid var(--navy4)">
+          <td style="padding:6px 10px;font-size:12px;color:var(--gray)">Labor Total</td>
+          <td style="padding:6px 10px;font-size:13px;font-weight:700;color:var(--white);text-align:right">${peso(wo.labor_total||0)}</td>
+        </tr>
+      </table>` : ''}
+      ${parts.length ? `
+      <div style="font-size:11px;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Parts Used</div>
+      <table style="width:100%;border-collapse:collapse;margin-bottom:10px">
+        ${partsRows}
+        <tr style="border-top:1px solid var(--navy4)">
+          <td style="padding:6px 10px;font-size:12px;color:var(--gray)">Parts Total</td>
+          <td style="padding:6px 10px;font-size:13px;font-weight:700;color:var(--white);text-align:right">${peso(wo.parts_total||0)}</td>
+        </tr>
+      </table>` : ''}
+      <div style="border-top:1px solid var(--navy4);padding-top:10px;display:flex;justify-content:flex-end;gap:24px">
+        ${wo.vat_amount ? `<span style="font-size:12px;color:var(--gray)">VAT: ${peso(wo.vat_amount)}</span>` : ''}
+        <span style="font-size:14px;font-weight:700;color:var(--green)">Grand Total: ${peso(wo.grand_total||0)}</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  const overlay = document.getElementById('clientDetailOverlay');
+  overlay.style.display = 'flex';
+}
+
+function closeClientDetail() {
+  document.getElementById('clientDetailOverlay').style.display = 'none';
 }
 
 </script>
